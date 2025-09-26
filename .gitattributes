@@ -1,4 +1,0 @@
-# Keep all languages visible but prioritize Python
-*.py linguist-detectable=true
-templates/** linguist-detectable=false  # If HTML is in templates folder
-static/vendor/** linguist-vendored      # Exclude vendor CSS/JS
