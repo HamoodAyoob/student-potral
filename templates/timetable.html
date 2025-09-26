@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% load static %}
+
+{% block title %}Timetable - Yenepoya Portal{% endblock %}
+
+{% block content %}
+<div class="timetable-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-calendar-alt"></i>
+                Class Timetable
+            </h1>
+            <p class="page-subtitle">{{ current_batch }} - Weekly Schedule</p>
+        </div>
+    </div>
+
+    <!-- Batch Filter (for teachers) -->
+    {% if not is_student %}
+    <div class="mb-4">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row align-items-end">
+                    <div class="col-md-4">
+                        <label for="batchSelect" class="form-label">Select Batch</label>
+                        <select name="batch" id="batchSelect" class="form-select" onchange="this.form.submit()">
+                            {% for batch in available_batches %}
+                                <option value="{{ batch }}" {% if batch == current_batch %}selected{% endif %}>
+                                    {{ batch }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Timetable -->
+    <div class="timetable-container">
+        <table class="timetable table-bordered">
+            <thead>
+                <tr>
+                    <th class="day-header">Day</th>
+                    {% for period in periods %}
+                        <th class="period-header">
+                            {{ period }}
+                            <br>
+                            <small class="time-slot">
+                                {% if period == "Period 1" %}8:30 - 9:25
+                                {% elif period == "Period 2" %}9:25 - 10:20
+                                {% elif period == "Break" %}10:20 - 10:40
+                                {% elif period == "Period 3" %}10:40 - 11:35
+                                {% elif period == "Period 4" %}11:35 - 12:30
+                                {% elif period == "Period 5" %}12:30 - 1:30
+                                {% elif period == "Lunch Break" %}1:30 - 2:15
+                                {% endif %}
+                            </small>
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in days %}
+                <tr>
+                    <td class="day-cell">
+                        <strong>{{ day }}</strong>
+                    </td>
+                    {% for period in periods %}
+                        <td class="period-cell {% if period == 'Break' %}break-period{% elif period == 'Lunch Break' %}lunch-break{% endif %}"
+                            data-day="{{ day }}" data-period="{{ period }}">
+                            {% with timetable_entry=timetable|lookup:day|lookup:period %}
+                                {% if timetable_entry %}
+                                    {% if period == 'Break' or period == 'Lunch Break' %}
+                                        <div class="break-label">
+                                            <i class="fas fa-coffee"></i>
+                                            {{ period }}
+                                        </div>
+                                    {% else %}
+                                        <div class="subject-info">
+                                            <div class="subject-name">
+                                                {{ timetable_entry.subject.name }}
+                                            </div>
+                                            <div class="subject-code">
+                                                {{ timetable_entry.subject.code }}
+                                            </div>
+                                            <div class="teacher-name">
+                                                <i class="fas fa-user"></i>
+                                                {{ timetable_entry.subject.teacher.user.get_full_name }}
+                                            </div>
+                                            <div class="room-info">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                                {{ timetable_entry.room }}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    {% if period == 'Break' %}
+                                        <div class="break-label">
+                                            <i class="fas fa-coffee"></i>
+                                            Break
+                                        </div>
+                                    {% elif period == 'Lunch Break' %}
+                                        <div class="break-label">
+                                            <i class="fas fa-utensils"></i>
+                                            Lunch Break
+                                        </div>
+                                    {% else %}
+                                        <div class="no-class">
+                                            <i class="fas fa-times text-muted"></i>
+                                            <span class="text-muted">No Class</span>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Current Period Indicator -->
+    <div class="current-period-indicator" id="currentPeriodIndicator" style="display: none;">
+        <div class="indicator-content">
+            <i class="fas fa-clock"></i>
+            <span>Current Period: <strong id="currentPeriodName"></strong></span>
+            <span class="time-remaining" id="timeRemaining"></span>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="timetable-legend mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    Legend
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="legend-item">
+                            <span class="legend-color current-period-demo"></span>
+                            <span>Current Period</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color break-period-demo"></span>
+                            <span>Break Time</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="legend-item">
+                            <span class="legend-color lunch-break-demo"></span>
+                            <span>Lunch Break</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color no-class-demo"></span>
+                            <span>No Class</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions mt-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-download fa-2x text-primary mb-3"></i>
+                        <h6>Download Timetable</h6>
+                        <button class="btn btn-outline-primary btn-sm" onclick="downloadTimetable()">
+                            <i class="fas fa-download"></i> PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-calendar-plus fa-2x text-success mb-3"></i>
+                        <h6>Add to Calendar</h6>
+                        <button class="btn btn-outline-success btn-sm" onclick="addToCalendar()">
+                            <i class="fas fa-calendar-plus"></i> Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timetable-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    margin: -1.5rem -1.5rem 2rem -1.5rem;
+    border-radius: 0 0 20px 20px;
+}
+
+.timetable-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.timetable {
+    width: 100%;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 1200px;
+}
+
+.timetable th {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 1rem 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    border: none;
+    position: relative;
+}
+
+.timetable th:first-child {
+    border-radius: 15px 0 0 0;
+}
+
+.timetable th:last-child {
+    border-radius: 0 15px 0 0;
+}
+
+.time-slot {
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.timetable td {
+    padding: 1rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    vertical-align: middle;
+    background: white;
+    transition: all 0.3s ease;
+    height: 120px;
+}
+
+.day-cell {
+    background: #f8fafc !important;
+    font-weight: 600;
+    color: #1e293b;
+    border-left: none;
+}
+
+.period-cell:hover {
+    background: #f1f5f9 !important;
+    transform: scale(1.02);
+    z-index: 1;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.subject-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    height: 100%;
+    justify-content: center;
+}
+
+.subject-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.subject-code {
+    font-size: 0.8rem;
+    color: #667eea;
+    font-weight: 500;
+}
+
+.teacher-name,
+.room-info {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.break-period {
+    background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+    color: #92400e;
+}
+
+.lunch-break {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important;
+    color: #166534;
+}
+
+.break-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.break-label i {
+    font-size: 1.5rem;
+}
+
+.no-class {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.current-period {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: white;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.current-period .subject-name,
+.current-period .subject-code,
+.current-period .teacher-name,
+.current-period .room-info {
+    color: white;
+}
+
+.current-period-indicator {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid #10b981;
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.indicator-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    text-align: center;
+}
+
+.time-remaining {
+    font-size: 0.875rem;
+    color: #059669;
+    font-weight: 500;
+}
+
+.timetable-legend {
+    margin-top: 2rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.current-period-demo {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.break-period-demo {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+.lunch-break-demo {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+}
+
+.no-class-demo {
+    background: #f1f5f9;
+    border: 2px solid #e2e8f0;
+}
+
+.quick-actions .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quick-actions .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    .timetable-container {
+        margin: 0 -1rem;
+        border-radius: 0;
+    }
+    
+    .timetable th,
+    .timetable td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+    }
+    
+    .subject-name {
+        font-size: 0.8rem;
+    }
+    
+    .subject-code,
+    .teacher-name,
+    .room-info {
+        font-size: 0.7rem;
+    }
+    
+    .current-period-indicator {
+        position: static;
+        margin: 1rem 0;
+        border-radius: 8px;
+    }
+    
+    .page-header {
+        margin: -1rem -1rem 1rem -1rem;
+        padding: 1.5rem 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .timetable {
+        min-width: 800px;
+    }
+    
+    .timetable th,
+    .timetable td {
+        padding: 0.4rem 0.2rem;
+        height: 100px;
+    }
+    
+    .subject-info {
+        gap: 0.2rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    highlightCurrentPeriod();
+    setInterval(highlightCurrentPeriod, 60000); // Update every minute
+    
+    updateCurrentPeriodIndicator();
+    setInterval(updateCurrentPeriodIndicator, 1000); // Update every second
+});
+
+function highlightCurrentPeriod() {
+    const now = new Date();
+    const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' });
+    const currentTime = now.getHours() * 100 + now.getMinutes();
+    
+    // Skip weekends
+    if (currentDay === 'Sunday') return;
+    
+    const periods = {
+        'Period 1': { start: 830, end: 925 },
+        'Period 2': { start: 925, end: 1020 },
+        'Break': { start: 1020, end: 1040 },
+        'Period 3': { start: 1040, end: 1135 },
+        'Period 4': { start: 1135, end: 1230 },
+        'Period 5': { start: 1230, end: 1330 },
+        'Lunch Break': { start: 1330, end: 1415 }
+    };
+    
+    // Remove previous highlights
+    document.querySelectorAll('.current-period').forEach(cell => {
+        cell.classList.remove('current-period');
+    });
+    
+    // Find and highlight current period
+    let currentPeriod = null;
+    Object.entries(periods).forEach(([period, timing]) => {
+        if (currentTime >= timing.start && currentTime <= timing.end) {
+            const cell = document.querySelector(`[data-day="${currentDay}"][data-period="${period}"]`);
+            if (cell) {
+                cell.classList.add('current-period');
+                currentPeriod = period;
+            }
+        }
+    });
+    
+    return currentPeriod;
+}
+
+function updateCurrentPeriodIndicator() {
+    const indicator = document.getElementById('currentPeriodIndicator');
+    const periodName = document.getElementById('currentPeriodName');
+    const timeRemaining = document.getElementById('timeRemaining');
+    
+    if (!indicator || !periodName || !timeRemaining) return;
+    
+    const now = new Date();
+    const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' });
+    const currentTime = now.getHours() * 100 + now.getMinutes();
+    
+    // Skip weekends
+    if (currentDay === 'Sunday' || currentDay === 'Saturday') {
+        indicator.style.display = 'none';
+        return;
+    }
+    
+    const periods = {
+        'Period 1': { start: 830, end: 925, name: 'Period 1 (8:30 - 9:25)' },
+        'Period 2': { start: 925, end: 1020, name: 'Period 2 (9:25 - 10:20)' },
+        'Break': { start: 1020, end: 1040, name: 'Break (10:20 - 10:40)' },
+        'Period 3': { start: 1040, end: 1135, name: 'Period 3 (10:40 - 11:35)' },
+        'Period 4': { start: 1135, end: 1230, name: 'Period 4 (11:35 - 12:30)' },
+        'Period 5': { start: 1230, end: 1330, name: 'Period 5 (12:30 - 1:30)' },
+        'Lunch Break': { start: 1330, end: 1415, name: 'Lunch Break (1:30 - 2:15)' }
+    };
+    
+    let currentPeriodInfo = null;
+    Object.entries(periods).forEach(([period, timing]) => {
+        if (currentTime >= timing.start && currentTime <= timing.end) {
+            currentPeriodInfo = timing;
+        }
+    });
+    
+    if (currentPeriodInfo) {
+        const endTime = Math.floor(currentPeriodInfo.end / 100) * 60 + (currentPeriodInfo.end % 100);
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const minutesLeft = endTime - currentMinutes;
+        
+        periodName.textContent = currentPeriodInfo.name;
+        timeRemaining.textContent = `${minutesLeft} minutes remaining`;
+        indicator.style.display = 'block';
+    } else {
+        indicator.style.display = 'none';
+    }
+}
+
+function downloadTimetable() {
+    // Create a printable version
+    const printWindow = window.open('', '_blank');
+    const timetableHTML = document.querySelector('.timetable-container').outerHTML;
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Timetable - {{ current_batch }}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid #000; padding: 8px; text-align: center; }
+                th { background: #f0f0f0; }
+                .break-period { background: #fef3c7; }
+                .lunch-break { background: #dcfce7; }
+                @media print {
+                    body { margin: 0; }
+                    table { font-size: 12px; }
+                }
+            </style>
+        </head>
+        <body>
+            <h2>Class Timetable - {{ current_batch }}</h2>
+            ${timetableHTML}
+            <p>Generated on: ${new Date().toLocaleDateString()}</p>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function addToCalendar() {
+    alert('Calendar export feature will be available soon!');
+}
+</script>
+{% endblock %}

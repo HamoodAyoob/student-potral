@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}Hall Ticket - Yenepoya Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-ticket-alt"></i> Hall Ticket Requests</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestHallTicketModal">
+                    <i class="fas fa-plus"></i> Request Hall Ticket
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> Your Hall Ticket Requests</h5>
+                </div>
+                <div class="card-body">
+                    {% if requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Exam Name</th>
+                                    <th>Exam Date</th>
+                                    <th>Request Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in requests %}
+                                <tr>
+                                    <td>{{ request.exam_name }}</td>
+                                    <td>{{ request.exam_date|date:"M d, Y" }}</td>
+                                    <td>{{ request.requested_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if request.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif request.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if request.status == 'approved' %}
+                                            <a href="#" class="btn btn-sm btn-primary" onclick="printHallTicket({{ request.id }})">
+                                                <i class="fas fa-print"></i> Print
+                                            </a>
+                                            <a href="#" class="btn btn-sm btn-outline-primary" onclick="downloadHallTicket({{ request.id }})">
+                                                <i class="fas fa-download"></i> Download
+                                            </a>
+                                        {% elif request.status == 'pending' %}
+                                            <button class="btn btn-sm btn-outline-danger" onclick="cancelRequest({{ request.id }})">
+                                                <i class="fas fa-times"></i> Cancel
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No hall ticket requests yet</h4>
+                        <p class="text-muted">Request your hall ticket for upcoming exams.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestHallTicketModal">
+                            <i class="fas fa-plus"></i> Request Hall Ticket
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Important Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Requirements</h6>
+                        <ul class="mb-0">
+                            <li>Minimum 75% attendance required</li>
+                            <li>All fees must be paid</li>
+                            <li>No pending disciplinary actions</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-clock"></i> Processing Time</h6>
+                        <p class="mb-0">Hall ticket requests are processed within 3-5 working days. Request at least 1 week before the exam.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-calendar-alt"></i> Upcoming Exams</h5>
+                </div>
+                <div class="card-body">
+                    <div class="exam-item mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Mid-Term Exam</span>
+                            <small class="text-muted">Dec 15, 2024</small>
+                        </div>
+                        <small class="text-info">All Subjects</small>
+                    </div>
+                    <div class="exam-item mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Final Exam</span>
+                            <small class="text-muted">Jan 20, 2025</small>
+                        </div>
+                        <small class="text-info">All Subjects</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Hall Ticket Modal -->
+<div class="modal fade" id="requestHallTicketModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Request Hall Ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {% if form %}
+                        <div class="mb-3">
+                            <label class="form-label">Exam Name</label>
+                            {{ form.exam_name }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Exam Date</label>
+                            {{ form.exam_date }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason (Optional)</label>
+                            {{ form.reason }}
+                            <div class="form-text">Mention any special requirements or reasons</div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-warning">
+                        <small><i class="fas fa-info-circle"></i> Please ensure you meet all the requirements before requesting a hall ticket.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.exam-item {
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border-left: 3px solid #007bff;
+}
+
+.alert {
+    border: none;
+    border-radius: 10px;
+}
+
+.alert-info {
+    background-color: rgba(23, 162, 184, 0.1);
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+</style>
+
+<script>
+function printHallTicket(requestId) {
+    // Open hall ticket in new window for printing
+    window.open(`/hall-ticket/print/${requestId}/`, '_blank');
+}
+
+function downloadHallTicket(requestId) {
+    // Download hall ticket as PDF
+    window.location.href = `/hall-ticket/download/${requestId}/`;
+}
+
+function cancelRequest(requestId) {
+    if (confirm('Are you sure you want to cancel this request?')) {
+        fetch(`/hall-ticket/cancel/${requestId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error cancelling request');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

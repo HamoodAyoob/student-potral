@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Error - Yenepoya Portal</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Background Animation */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .floating-element {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .floating-element:nth-child(1) {
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .floating-element:nth-child(2) {
+            top: 60%;
+            left: 80%;
+            animation-delay: 2s;
+        }
+        
+        .floating-element:nth-child(3) {
+            top: 80%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            33% {
+                transform: translateY(-20px) rotate(10deg);
+            }
+            66% {
+                transform: translateY(10px) rotate(-5deg);
+            }
+        }
+        
+        .error-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            padding: 3rem;
+            text-align: center;
+            max-width: 700px;
+            width: 100%;
+            animation: slideUp 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .error-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .error-icon {
+            font-size: 5rem;
+            color: #ef4444;
+            margin-bottom: 1.5rem;
+            animation: errorPulse 2s infinite;
+            position: relative;
+        }
+        
+        @keyframes errorPulse {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.3));
+            }
+            50% {
+                transform: scale(1.05);
+                filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.5));
+            }
+        }
+        
+        .error-code {
+            font-size: 7rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 1rem;
+            animation: glitch 3s infinite;
+            position: relative;
+        }
+        
+        @keyframes glitch {
+            0%, 90%, 100% {
+                transform: translateX(0);
+            }
+            10% {
+                transform: translateX(-2px);
+            }
+            20% {
+                transform: translateX(2px);
+            }
+            30% {
+                transform: translateX(-1px);
+            }
+            40% {
+                transform: translateX(1px);
+            }
+            50% {
+                transform: translateX(-2px);
+            }
+            60% {
+                transform: translateX(2px);
+            }
+            70% {
+                transform: translateX(-1px);
+            }
+            80% {
+                transform: translateX(1px);
+            }
+        }
+        
+        .error-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #1f2937;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .error-message {
+            font-size: 1.2rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .status-indicator {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border: 2px solid #fca5a5;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .status-indicator::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            height: 4px;
+            background: linear-gradient(90deg, #ef4444, #dc2626, #ef4444);
+            border-radius: 15px 15px 0 0;
+            animation: statusPulse 2s infinite;
+        }
+        
+        @keyframes statusPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        .status-text {
+            color: #7f1d1d;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .refresh-timer {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border: 2px solid #fbbf24;
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin: 1.5rem 0;
+            color: #92400e;
+            font-weight: 600;
+            font-size: 1.1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .refresh-timer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.2), transparent);
+            animation: timerShimmer 2s infinite;
+        }
+        
+        @keyframes timerShimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .timer-icon {
+            animation: spin 2s linear infinite;
+            margin-right: 0.5rem;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .countdown-number {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #d97706;
+            display: inline-block;
+            min-width: 30px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1.2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 2.5rem 0;
+        }
+        
+        .btn {
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #ef4444;
+            border: 2px solid #ef4444;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+        }
+        
+        .btn-outline:hover {
+            background: #ef4444;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+        }
+        
+        .error-details {
+            background: linear-gradient(135deg, #fef2f2, #ffffff);
+            border: 2px solid #fecaca;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: left;
+            position: relative;
+        }
+        
+        .error-details::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #ef4444, #dc2626);
+            border-radius: 2px;
+        }
+        
+        .error-details h5 {
+            color: #dc2626;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 1.3rem;
+        }
+        
+        .error-details p {
+            color: #7f1d1d;
+            margin-bottom: 1.2rem;
+            line-height: 1.6;
+            font-size: 1.05rem;
+        }
+        
+        .error-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .error-list li {
+            color: #7f1d1d;
+            margin-bottom: 0.8rem;
+            padding-left: 2rem;
+            position: relative;
+            font-size: 1.05rem;
+        }
+        
+        .error-list li::before {
+            content: '\f00d';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: #ef4444;
+        }
+        
+        .support-info {
+            background: linear-gradient(135deg, #f0f9ff, #ffffff);
+            border: 2px solid #bae6fd;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .support-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #0ea5e9, #0284c7);
+            border-radius: 2px;
+        }
+        
+        .support-info h5 {
+            color: #0369a1;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 1.3rem;
+        }
+        
+        .support-info p {
+            color: #1e40af;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            font-size: 1.05rem;
+        }
+        
+        .support-contacts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.2rem;
+        }
+        
+        .support-item {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #1e40af;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .support-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .support-item i {
+            color: #3b82f6;
+            width: 24px;
+            font-size: 1.2rem;
+        }
+        
+        .portal-info {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 3px solid #f1f5f9;
+            color: #6b7280;
+        }
+        
+        .portal-logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .portal-logo i {
+            font-size: 2rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+            
+            .error-code {
+                font-size: 5rem;
+            }
+            
+            .error-title {
+                font-size: 1.8rem;
+            }
+            
+            .error-message {
+                font-size: 1.1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+                padding: 1rem;
+            }
+            
+            .support-contacts {
+                grid-template-columns: 1fr;
+            }
+            
+            .error-details,
+            .support-info {
+                padding: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .error-code {
+                font-size: 4rem;
+            }
+            
+            .error-title {
+                font-size: 1.5rem;
+            }
+            
+            .support-item {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="background-animation">
+        <div class="floating-element">
+            <i class="fas fa-server" style="font-size: 3rem;"></i>
+        </div>
+        <div class="floating-element">
+            <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem;"></i>
+        </div>
+        <div class="floating-element">
+            <i class="fas fa-tools" style="font-size: 2rem;"></i>
+        </div>
+    </div>
+
+    <div class="error-container">
+        <div class="error-icon">
+            <i class="fas fa-server"></i>
+        </div>
+        
+        <div class="error-code">500</div>
+        
+        <h1 class="error-title">Internal Server Error</h1>
+        
+        <p class="error-message">
+            We're experiencing technical difficulties on our end. Our engineering team has been automatically 
+            notified and is working to resolve this issue as quickly as possible.
+        </p>
+        
+        <div class="status-indicator">
+            <div class="status-text">
+                <i class="fas fa-exclamation-circle"></i>
+                System Status: Under Investigation
+            </div>
+            <small>Our technical team is actively working on this issue</small>
+        </div>
+        
+        <div class="refresh-timer" id="refreshTimer">
+            <i class="fas fa-sync-alt timer-icon"></i>
+            Auto-refreshing in <span class="countdown-number" id="countdown">60</span> seconds...
+        </div>
+        
+        <div class="action-buttons">
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i>
+                Return to Dashboard
+            </a>
+            <button onclick="location.reload()" class="btn btn-outline">
+                <i class="fas fa-redo"></i>
+                Refresh Page Now
+            </button>
+        </div>
+        
+        <div class="error-details">
+            <h5>
+                <i class="fas fa-info-circle"></i>
+                What caused this error?
+            </h5>
+            <p>
+                A server error occurred while processing your request. This could be due to several factors:
+            </p>
+            <ul class="error-list">
+                <li>Temporary server overload or high traffic</li>
+                <li>Database connectivity issues</li>
+                <li>Scheduled maintenance or updates</li>
+                <li>Unexpected application error</li>
+                <li>Network connectivity problems</li>
+            </ul>
+        </div>
+        
+        <div class="support-info">
+            <h5>
+                <i class="fas fa-headset"></i>
+                Need immediate assistance?
+            </h5>
+            <p>
+                If this error persists or you need urgent help, please contact our technical support team:
+            </p>
+            <div class="support-contacts">
+                <div class="support-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <div>
+                        <div>IT Helpdesk</div>
+                        <div>+91 824 2204 668</div>
+                    </div>
+                </div>
+                <div class="support-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <div>Technical Support</div>
+                        <div>support@yenepoya.edu.in</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="portal-info">
+            <div class="portal-logo">
+                <i class="fas fa-graduation-cap"></i>
+                Yenepoya Portal
+            </div>
+            <p>Student Information Management System</p>
+            <small>© 2024 Yenepoya University. All rights reserved.</small>
+        </div>
+    </div>
+    
+    <script>
+        // Enhanced auto-refresh countdown with better UX
+        let countdown = 60;
+        const countdownElement = document.getElementById('countdown');
+        const refreshTimer = document.getElementById('refreshTimer');
+        let refreshInterval;
+        
+        function startCountdown() {
+            refreshInterval = setInterval(() => {
+                countdown--;
+                if (countdownElement) {
+                    countdownElement.textContent = countdown;
+                    
+                    // Add urgency styling as countdown gets lower
+                    if (countdown <= 10) {
+                        countdownElement.style.color = '#dc2626';
+                        countdownElement.style.fontSize = '1.5rem';
+                    } else if (countdown <= 30) {
+                        countdownElement.style.color = '#d97706';
+                    }
+                }
+                
+                if (countdown <= 0) {
+                    clearInterval(refreshInterval);
+                    
+                    // Show loading state
+                    if (refreshTimer) {
+                        refreshTimer.innerHTML = `
+                            <i class="fas fa-spinner fa-spin timer-icon"></i>
+                            Refreshing page...
+                        `;
+                    }
+                    
+                    // Add slight delay to show the loading state
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                }
+            }, 1000);
+        }
+        
+        // Stop auto-refresh if user interacts with the page
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshTimer.style.display = 'none';
+            }
+        }
+        
+        // Event listeners for user interaction
+        document.addEventListener('click', stopAutoRefresh);
+        document.addEventListener('keydown', stopAutoRefresh);
+        document.addEventListener('scroll', stopAutoRefresh);
+        
+        // Start countdown when page loads
+        document.addEventListener('DOMContentLoaded', startCountdown);
+        
+        // Add some interactive feedback for buttons
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+        
+        // Add loading state to refresh button
+        document.querySelector('button[onclick="location.reload()"]')?.addEventListener('click', function() {
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            this.disabled = true;
+        });
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

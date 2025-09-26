@@ -1,0 +1,639 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Assignments - Yenepoya Portal{% endblock %}
+
+{% block content %}
+<div class="assignments-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-tasks"></i>
+                Assignments
+            </h1>
+            {% if is_student %}
+                <p class="page-subtitle">View and submit your assignments</p>
+            {% else %}
+                <p class="page-subtitle">Create and manage assignments</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if is_teacher %}
+    <!-- Teacher: Create Assignment -->
+    <div class="create-assignment-section mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus-circle"></i>
+                    Create New Assignment
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" class="assignment-form">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.title.id_for_label }}" class="form-label">Assignment Title</label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.title.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="{{ form.subject.id_for_label }}" class="form-label">Subject</label>
+                                {{ form.subject }}
+                                {% if form.subject.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.subject.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="{{ form.max_marks.id_for_label }}" class="form-label">Max Marks</label>
+                                {{ form.max_marks }}
+                                {% if form.max_marks.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.max_marks.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.description.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.question_file.id_for_label }}" class="form-label">Question File (Optional)</label>
+                                {{ form.question_file }}
+                                {% if form.question_file.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.question_file.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.due_date.id_for_label }}" class="form-label">Due Date & Time</label>
+                                {{ form.due_date }}
+                                {% if form.due_date.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.due_date.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Create Assignment
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                            <i class="fas fa-times"></i>
+                            Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Assignments List -->
+    <div class="assignments-list">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i>
+                    {% if is_student %}Your Assignments{% else %}Created Assignments{% endif %}
+                </h5>
+                <div class="assignments-filter">
+                    <select class="form-select form-select-sm" id="statusFilter">
+                        <option value="all">All Assignments</option>
+                        {% if is_student %}
+                            <option value="pending">Pending</option>
+                            <option value="submitted">Submitted</option>
+                            <option value="overdue">Overdue</option>
+                        {% else %}
+                            <option value="active">Active</option>
+                            <option value="expired">Expired</option>
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if assignments %}
+                    <div class="assignments-grid">
+                        {% for assignment in assignments %}
+                        <div class="assignment-card {% if assignment.is_overdue %}overdue{% endif %}" 
+                             data-status="{% if is_student %}{% if assignment.is_submitted %}submitted{% elif assignment.is_overdue %}overdue{% else %}pending{% endif %}{% else %}{% if assignment.is_overdue %}expired{% else %}active{% endif %}{% endif %}">
+                            
+                            <!-- Assignment Header -->
+                            <div class="assignment-header">
+                                <div class="assignment-title">
+                                    <h6>{{ assignment.title }}</h6>
+                                    <span class="assignment-subject">{{ assignment.subject.name }}</span>
+                                </div>
+                                <div class="assignment-status">
+                                    {% if is_student %}
+                                        {% if assignment.is_submitted %}
+                                            <span class="status-badge submitted">
+                                                <i class="fas fa-check-circle"></i> Submitted
+                                            </span>
+                                        {% elif assignment.is_overdue %}
+                                            <span class="status-badge overdue">
+                                                <i class="fas fa-clock"></i> Overdue
+                                            </span>
+                                        {% else %}
+                                            <span class="status-badge pending">
+                                                <i class="fas fa-hourglass-half"></i> Pending
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="status-badge {% if assignment.is_overdue %}expired{% else %}active{% endif %}">
+                                            {% if assignment.is_overdue %}
+                                                <i class="fas fa-times-circle"></i> Expired
+                                            {% else %}
+                                                <i class="fas fa-check-circle"></i> Active
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Assignment Content -->
+                            <div class="assignment-content">
+                                <p class="assignment-description">{{ assignment.description|truncatewords:20 }}</p>
+                                
+                                <div class="assignment-meta">
+                                    <div class="meta-item">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span>Due: {{ assignment.due_date|date:"M d, Y H:i" }}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-star"></i>
+                                        <span>{{ assignment.max_marks }} marks</span>
+                                    </div>
+                                    {% if is_teacher %}
+                                        <div class="meta-item">
+                                            <i class="fas fa-users"></i>
+                                            <span>{{ assignment.submission_stats.submitted }}/{{ assignment.submission_stats.total }} submitted</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Assignment Actions -->
+                            <div class="assignment-actions">
+                                {% if is_student %}
+                                    {% if assignment.question_file %}
+                                        <a href="{{ assignment.question_file.url }}" class="btn btn-outline-primary btn-sm" download>
+                                            <i class="fas fa-download"></i> Download Question
+                                        </a>
+                                    {% endif %}
+                                    
+                                    {% if not assignment.is_submitted and not assignment.is_overdue %}
+                                        <button class="btn btn-primary btn-sm" 
+                                                onclick="showSubmissionModal('{{ assignment.id }}', '{{ assignment.title|escapejs }}')">
+                                            <i class="fas fa-upload"></i> Submit
+                                        </button>
+                                    {% elif assignment.is_submitted %}
+                                        <span class="text-success">
+                                            <i class="fas fa-check"></i> 
+                                            Submitted on {{ assignment.submission.submitted_at|date:"M d, Y H:i" }}
+                                        </span>
+                                        {% if assignment.submission.marks %}
+                                            <div class="marks-display">
+                                                Marks: {{ assignment.submission.marks }}/{{ assignment.max_marks }}
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'assignment_submissions' assignment.id %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i> View Submissions
+                                    </a>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="editAssignment({{ assignment.id }})">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">
+                            {% if is_student %}
+                                No assignments found
+                            {% else %}
+                                No assignments created yet. Create your first assignment above.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student Submission Modal -->
+{% if is_student %}
+<div class="modal fade" id="submissionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload"></i>
+                    Submit Assignment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="assignment-info mb-3">
+                        <h6 class="assignment-title-modal">Assignment Title</h6>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="answer_file" class="form-label">Upload Answer File</label>
+                        <input type="file" class="form-control" name="answer_file" id="answer_file" 
+                               accept=".pdf,.doc,.docx,.txt,.zip" required>
+                        <div class="form-text">
+                            Supported formats: PDF, DOC, DOCX, TXT, ZIP (Max: 10MB)
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" name="assignment_id" id="assignment_id_modal">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i>
+                        Submit Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.assignments-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    margin: -1.5rem -1.5rem 2rem -1.5rem;
+    border-radius: 0 0 20px 20px;
+}
+
+.assignment-form {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-top: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e5e7eb;
+}
+
+.assignments-filter {
+    min-width: 200px;
+}
+
+.assignments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.assignment-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 15px;
+    padding: 1.5rem;
+    background: white;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.assignment-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
+
+.assignment-card.overdue {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, #fef2f2, #ffffff);
+}
+
+.assignment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.assignment-title h6 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.3;
+}
+
+.assignment-subject {
+    font-size: 0.875rem;
+    color: #667eea;
+    font-weight: 500;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge.submitted {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.overdue {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.active {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-badge.expired {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.assignment-description {
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.assignment-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.meta-item i {
+    color: #667eea;
+    width: 14px;
+}
+
+.assignment-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.marks-display {
+    font-size: 0.875rem;
+    color: #059669;
+    font-weight: 600;
+    background: #dcfce7;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+}
+
+/* Modal Styles */
+.assignment-title-modal {
+    color: #1e293b;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.assignment-info {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+/* File input styling */
+.form-control[type="file"] {
+    padding: 0.75rem;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+}
+
+.form-control[type="file"]:focus {
+    border-color: #667eea;
+    border-style: solid;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    opacity: 0.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .assignments-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .assignment-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .assignment-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .assignment-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .assignment-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Filter animations */
+.assignment-card.filtered-out {
+    display: none;
+}
+
+.assignment-card.filtered-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAssignments();
+});
+
+function initializeAssignments() {
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterAssignments);
+    }
+    
+    // Initialize file input styling
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const fileName = this.files[0]?.name;
+            if (fileName) {
+                this.classList.add('file-selected');
+            } else {
+                this.classList.remove('file-selected');
+            }
+        });
+    });
+}
+
+function filterAssignments() {
+    const filter = document.getElementById('statusFilter').value;
+    const assignments = document.querySelectorAll('.assignment-card');
+    
+    assignments.forEach(card => {
+        const status = card.dataset.status;
+        
+        if (filter === 'all' || status === filter) {
+            card.classList.remove('filtered-out');
+            card.classList.add('filtered-in');
+        } else {
+            card.classList.add('filtered-out');
+            card.classList.remove('filtered-in');
+        }
+    });
+}
+
+function showSubmissionModal(assignmentId, assignmentTitle) {
+    const modal = document.getElementById('submissionModal');
+    const titleElement = modal.querySelector('.assignment-title-modal');
+    const hiddenInput = modal.querySelector('#assignment_id_modal');
+    
+    titleElement.textContent = assignmentTitle;
+    hiddenInput.value = assignmentId;
+    
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+function resetForm() {
+    document.querySelector('.assignment-form').reset();
+}
+
+function editAssignment(assignmentId) {
+    // This would typically open an edit modal or redirect to edit page
+    alert('Edit functionality will be implemented based on your specific needs.');
+}
+
+// File size validation
+document.addEventListener('change', function(e) {
+    if (e.target.type === 'file') {
+        const file = e.target.files[0];
+        if (file && file.size > 10 * 1024 * 1024) { // 10MB
+            alert('File size must be less than 10MB');
+            e.target.value = '';
+        }
+    }
+});
+</script>
+{% endblock %}

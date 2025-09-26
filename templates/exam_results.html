@@ -1,0 +1,1136 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Exam Results - Yenepoya Portal{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-chart-line"></i>
+                Exam Results
+            </h1>
+            {% if is_student %}
+                <p class="page-subtitle">View your exam results and performance analytics</p>
+            {% else %}
+                <p class="page-subtitle">Publish and manage student results</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if is_teacher %}
+    <!-- Teacher: Publish Results -->
+    <div class="publish-results-section mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus-circle"></i>
+                    Publish New Result
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" class="results-form">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="{{ form.student.id_for_label }}" class="form-label">Student</label>
+                                {{ form.student }}
+                                {% if form.student.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.student.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="{{ form.subject.id_for_label }}" class="form-label">Subject</label>
+                                {{ form.subject }}
+                                {% if form.subject.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.subject.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="{{ form.exam_type.id_for_label }}" class="form-label">Exam Type</label>
+                                {{ form.exam_type }}
+                                {% if form.exam_type.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.exam_type.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="{{ form.marks_obtained.id_for_label }}" class="form-label">Marks Obtained</label>
+                                {{ form.marks_obtained }}
+                                {% if form.marks_obtained.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.marks_obtained.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="{{ form.total_marks.id_for_label }}" class="form-label">Total Marks</label>
+                                {{ form.total_marks }}
+                                {% if form.total_marks.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.total_marks.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Calculated Grade</label>
+                                <div class="grade-display" id="calculatedGrade">
+                                    <span class="grade-placeholder">Enter marks to see grade</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.remarks.id_for_label }}" class="form-label">Remarks (Optional)</label>
+                        {{ form.remarks }}
+                        {% if form.remarks.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.remarks.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Publish Result
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetResultsForm()">
+                            <i class="fas fa-times"></i>
+                            Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Published Results Table -->
+    <div class="published-results-section">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i>
+                    Published Results
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if results %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Subject</th>
+                                    <th>Exam Type</th>
+                                    <th>Marks</th>
+                                    <th>Grade</th>
+                                    <th>Published</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for result in results %}
+                                <tr>
+                                    <td>
+                                        <div class="student-info">
+                                            <strong>{{ result.student.user.get_full_name }}</strong>
+                                            <small class="text-muted d-block">{{ result.student.campus_id }}</small>
+                                        </div>
+                                    </td>
+                                    <td>{{ result.subject.name }}</td>
+                                    <td>
+                                        <span class="exam-type-badge {{ result.exam_type }}">
+                                            {{ result.get_exam_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="marks-display">
+                                            <strong>{{ result.marks_obtained }}/{{ result.total_marks }}</strong>
+                                            <small class="percentage">
+                                                ({% widthratio result.marks_obtained result.total_marks 100 %}%)
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="grade-badge grade-{{ result.grade|lower }}">
+                                            {{ result.grade }}
+                                        </span>
+                                    </td>
+                                    <td>{{ result.published_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" onclick="editResult({{ result.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" onclick="deleteResult({{ result.id }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <p>No results published yet. Use the form above to publish your first result.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Student: Results Dashboard -->
+    <div class="student-results">
+        <!-- Performance Overview -->
+        <div class="performance-overview mb-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ total_results }}</div>
+                            <div class="stat-label">Total Results</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ avg_percentage }}%</div>
+                            <div class="stat-label">Average Score</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="bestGrade">-</div>
+                            <div class="stat-label">Best Grade</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ student.semester }}</div>
+                            <div class="stat-label">Current Semester</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject-wise Performance Chart -->
+        <div class="performance-chart-section mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-area"></i>
+                        Performance Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="performanceChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject-wise Results -->
+        <div class="subject-results mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-books"></i>
+                        Subject-wise Performance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if subjects %}
+                        <div class="subjects-grid">
+                            {% for subject_name, subject_results in subjects.items %}
+                                <div class="subject-card">
+                                    <div class="subject-header">
+                                        <h6 class="subject-name">{{ subject_name }}</h6>
+                                        <div class="subject-stats">
+                                            <span class="results-count">{{ subject_results|length }} result{{ subject_results|length|pluralize }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="subject-results-list">
+                                        {% for result in subject_results %}
+                                            <div class="result-item">
+                                                <div class="result-header">
+                                                    <span class="exam-type">{{ result.get_exam_type_display }}</span>
+                                                    <span class="grade-badge grade-{{ result.grade|lower }}">
+                                                        {{ result.grade }}
+                                                    </span>
+                                                </div>
+                                                <div class="result-details">
+                                                    <div class="marks">{{ result.marks_obtained }}/{{ result.total_marks }}</div>
+                                                    <div class="percentage">
+                                                        {% widthratio result.marks_obtained result.total_marks 100 %}%
+                                                    </div>
+                                                    <div class="date">{{ result.published_at|date:"M d" }}</div>
+                                                </div>
+                                                {% if result.remarks %}
+                                                    <div class="result-remarks">
+                                                        <i class="fas fa-comment-alt"></i>
+                                                        {{ result.remarks }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <!-- Subject Average -->
+                                    <div class="subject-average">
+                                        <div class="average-label">Subject Average:</div>
+                                        <div class="average-score" data-subject="{{ subject_name|slugify }}">
+                                            Calculating...
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-chart-bar fa-2x text-muted mb-2"></i>
+                            <p>No results available yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Results Table -->
+        <div class="detailed-results">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table"></i>
+                        All Results
+                    </h5>
+                    <div class="results-controls">
+                        <select class="form-select form-select-sm me-2" id="examTypeFilter">
+                            <option value="all">All Exam Types</option>
+                            <option value="internal_1">Internal Assessment 1</option>
+                            <option value="internal_2">Internal Assessment 2</option>
+                            <option value="internal_3">Internal Assessment 3</option>
+                            <option value="semester">Semester End Exam</option>
+                            <option value="assignment">Assignment</option>
+                        </select>
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportResults()">
+                            <i class="fas fa-download"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if results %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="resultsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Exam Type</th>
+                                        <th>Marks Obtained</th>
+                                        <th>Total Marks</th>
+                                        <th>Percentage</th>
+                                        <th>Grade</th>
+                                        <th>Published Date</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsTableBody">
+                                    {% for result in results %}
+                                    <tr data-exam-type="{{ result.exam_type }}">
+                                        <td>
+                                            <div class="subject-info">
+                                                <strong>{{ result.subject.name }}</strong>
+                                                <small class="text-muted d-block">{{ result.subject.code }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="exam-type-badge {{ result.exam_type }}">
+                                                {{ result.get_exam_type_display }}
+                                            </span>
+                                        </td>
+                                        <td class="marks-cell">{{ result.marks_obtained }}</td>
+                                        <td class="marks-cell">{{ result.total_marks }}</td>
+                                        <td>
+                                            <div class="percentage-display">
+                                                <span class="percentage-value">{% widthratio result.marks_obtained result.total_marks 100 %}%</span>
+                                                <div class="progress-bar-mini">
+                                                    <div class="progress-fill" style="width: {% widthratio result.marks_obtained result.total_marks 100 %}%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="grade-badge grade-{{ result.grade|lower }}">
+                                                {{ result.grade }}
+                                            </span>
+                                        </td>
+                                        <td>{{ result.published_at|date:"M d, Y H:i" }}</td>
+                                        <td>
+                                            {% if result.remarks %}
+                                                <span class="remarks-preview" title="{{ result.remarks }}">
+                                                    {{ result.remarks|truncatewords:5 }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <p>No exam results published yet. Results will appear here once your teachers publish them.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.results-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    margin: -1.5rem -1.5rem 2rem -1.5rem;
+    border-radius: 0 0 20px 20px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid #f1f5f9;
+}
+
+.grade-display {
+    height: 38px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.grade-placeholder {
+    color: #9ca3af;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* Performance Overview Cards */
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1f2937;
+    line-height: 1;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Chart Section */
+.chart-container {
+    height: 300px;
+    position: relative;
+}
+
+/* Subject Cards */
+.subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.subject-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 1.5rem;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.subject-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
+
+.subject-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.subject-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.results-count {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.result-item {
+    padding: 1rem;
+    border: 1px solid #f1f5f9;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+}
+
+.result-item:hover {
+    border-color: #e5e7eb;
+    background: white;
+}
+
+.result-item:last-child {
+    margin-bottom: 0;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.exam-type {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.result-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    text-align: center;
+    margin-bottom: 0.75rem;
+}
+
+.result-details .marks {
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 1.1rem;
+}
+
+.result-details .percentage {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.result-details .date {
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+.result-remarks {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #92400e;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.subject-average {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid #f1f5f9;
+    font-weight: 600;
+}
+
+.average-label {
+    color: #4b5563;
+}
+
+.average-score {
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+/* Grade Badges */
+.grade-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    min-width: 40px;
+    display: inline-block;
+}
+
+.grade-badge.grade-a-plus,
+.grade-badge.grade-a {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.grade-badge.grade-b-plus,
+.grade-badge.grade-b {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.grade-badge.grade-c {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.grade-badge.grade-d,
+.grade-badge.grade-f {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Exam Type Badges */
+.exam-type-badge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.exam-type-badge.internal_1,
+.exam-type-badge.internal_2,
+.exam-type-badge.internal_3 {
+    background: #e0f2fe;
+    color: #0277bd;
+}
+
+.exam-type-badge.semester {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.exam-type-badge.assignment {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+/* Table Enhancements */
+.table th {
+    background: #f8fafc;
+    border: none;
+    font-weight: 600;
+    color: #475569;
+    padding: 1rem;
+}
+
+.table td {
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.marks-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.marks-display .percentage {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.percentage-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.percentage-value {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.progress-bar-mini {
+    width: 60px;
+    height: 4px;
+    background: #f1f5f9;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+}
+
+.remarks-preview {
+    cursor: help;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.results-controls {
+    display: flex;
+    align-items: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    opacity: 0.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .subjects-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .result-details {
+        grid-template-columns: 1fr;
+        text-align: left;
+        gap: 0.5rem;
+    }
+    
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+    
+    .results-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    
+    .results-controls .form-select {
+        margin: 0;
+    }
+    
+    .subject-average {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeResults();
+    calculateGradeInRealTime();
+    findBestGrade();
+    calculateSubjectAverages();
+    {% if is_student %}
+        initPerformanceChart();
+    {% endif %}
+});
+
+function initializeResults() {
+    const examTypeFilter = document.getElementById('examTypeFilter');
+    if (examTypeFilter) {
+        examTypeFilter.addEventListener('change', filterResultsByExamType);
+    }
+}
+
+function calculateGradeInRealTime() {
+    const marksObtained = document.querySelector('input[name="marks_obtained"]');
+    const totalMarks = document.querySelector('input[name="total_marks"]');
+    const gradeDisplay = document.getElementById('calculatedGrade');
+    
+    if (marksObtained && totalMarks && gradeDisplay) {
+        function updateGrade() {
+            const obtained = parseFloat(marksObtained.value) || 0;
+            const total = parseFloat(totalMarks.value) || 0;
+            
+            if (total > 0) {
+                const percentage = (obtained / total) * 100;
+                let grade = 'F';
+                let gradeClass = 'grade-f';
+                
+                if (percentage >= 90) {
+                    grade = 'A+';
+                    gradeClass = 'grade-a-plus';
+                } else if (percentage >= 80) {
+                    grade = 'A';
+                    gradeClass = 'grade-a';
+                } else if (percentage >= 70) {
+                    grade = 'B+';
+                    gradeClass = 'grade-b-plus';
+                } else if (percentage >= 60) {
+                    grade = 'B';
+                    gradeClass = 'grade-b';
+                } else if (percentage >= 50) {
+                    grade = 'C';
+                    gradeClass = 'grade-c';
+                } else if (percentage >= 40) {
+                    grade = 'D';
+                    gradeClass = 'grade-d';
+                }
+                
+                gradeDisplay.innerHTML = `<span class="grade-badge ${gradeClass}">${grade}</span>`;
+                gradeDisplay.className = 'grade-display';
+            } else {
+                gradeDisplay.innerHTML = '<span class="grade-placeholder">Enter marks to see grade</span>';
+            }
+        }
+        
+        marksObtained.addEventListener('input', updateGrade);
+        totalMarks.addEventListener('input', updateGrade);
+    }
+}
+
+function findBestGrade() {
+    const bestGradeElement = document.getElementById('bestGrade');
+    if (bestGradeElement) {
+        const gradeElements = document.querySelectorAll('.grade-badge');
+        const gradeOrder = ['A+', 'A', 'B+', 'B', 'C', 'D', 'F'];
+        let bestGrade = 'F';
+        
+        gradeElements.forEach(element => {
+            const grade = element.textContent.trim();
+            const currentIndex = gradeOrder.indexOf(bestGrade);
+            const newIndex = gradeOrder.indexOf(grade);
+            
+            if (newIndex < currentIndex || currentIndex === -1) {
+                bestGrade = grade;
+            }
+        });
+        
+        bestGradeElement.textContent = gradeElements.length > 0 ? bestGrade : '-';
+    }
+}
+
+function calculateSubjectAverages() {
+    // Group results by subject and calculate averages
+    const subjects = {};
+    
+    document.querySelectorAll('.subject-card').forEach(card => {
+        const subjectName = card.querySelector('.subject-name').textContent.trim();
+        const results = [];
+        
+        card.querySelectorAll('.result-item').forEach(item => {
+            const marksText = item.querySelector('.marks').textContent;
+            const [obtained, total] = marksText.split('/').map(x => parseInt(x.trim()));
+            if (obtained && total) {
+                results.push((obtained / total) * 100);
+            }
+        });
+        
+        if (results.length > 0) {
+            const average = results.reduce((a, b) => a + b, 0) / results.length;
+            const averageElement = card.querySelector('.average-score');
+            if (averageElement) {
+                averageElement.textContent = average.toFixed(1) + '%';
+                averageElement.classList.remove('text-muted');
+                
+                // Color code based on average
+                if (average >= 80) {
+                    averageElement.style.color = '#059669';
+                } else if (average >= 60) {
+                    averageElement.style.color = '#d97706';
+                } else {
+                    averageElement.style.color = '#dc2626';
+                }
+            }
+        }
+    });
+}
+
+function initPerformanceChart() {
+    const canvas = document.getElementById('performanceChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Sample data - in real implementation, this would come from the template
+    const subjects = [];
+    const averages = [];
+    
+    // Extract data from subject cards
+    document.querySelectorAll('.subject-card').forEach(card => {
+        const subjectName = card.querySelector('.subject-name').textContent.trim();
+        const averageElement = card.querySelector('.average-score');
+        
+        if (averageElement && !averageElement.textContent.includes('Calculating')) {
+            const average = parseFloat(averageElement.textContent.replace('%', ''));
+            if (!isNaN(average)) {
+                subjects.push(subjectName.length > 15 ? subjectName.substring(0, 15) + '...' : subjectName);
+                averages.push(average);
+            }
+        }
+    });
+    
+    if (subjects.length === 0) {
+        // Show placeholder
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data available for chart', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+    
+    // Simple bar chart implementation
+    const barWidth = canvas.width / subjects.length * 0.8;
+    const barSpacing = canvas.width / subjects.length * 0.2;
+    const maxValue = Math.max(...averages, 100);
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw bars
+    subjects.forEach((subject, index) => {
+        const barHeight = (averages[index] / maxValue) * (canvas.height * 0.7);
+        const x = index * (barWidth + barSpacing) + barSpacing / 2;
+        const y = canvas.height * 0.8 - barHeight;
+        
+        // Gradient for bars
+        const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+        gradient.addColorStop(0, '#667eea');
+        gradient.addColorStop(1, '#764ba2');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y, barWidth, barHeight);
+        
+        // Subject labels
+        ctx.fillStyle = '#4b5563';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.save();
+        ctx.translate(x + barWidth / 2, canvas.height * 0.9);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillText(subject, 0, 0);
+        ctx.restore();
+        
+        // Value labels on bars
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(averages[index].toFixed(1) + '%', x + barWidth / 2, y - 5);
+    });
+}
+
+function filterResultsByExamType() {
+    const filter = document.getElementById('examTypeFilter').value;
+    const rows = document.querySelectorAll('#resultsTableBody tr');
+    
+    rows.forEach(row => {
+        const examType = row.dataset.examType;
+        
+        if (filter === 'all' || examType === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function exportResults() {
+    const table = document.getElementById('resultsTable');
+    if (!table) return;
+    
+    // Simple CSV export
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        let rowData = [];
+        cols.forEach(col => {
+            // Clean text content
+            let text = col.textContent.trim();
+            // Remove extra whitespace
+            text = text.replace(/\s+/g, ' ');
+            rowData.push('"' + text + '"');
+        });
+        csv.push(rowData.join(','));
+    });
+    
+    // Download CSV
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'exam_results.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+}
+
+function resetResultsForm() {
+    document.querySelector('.results-form').reset();
+    const gradeDisplay = document.getElementById('calculatedGrade');
+    if (gradeDisplay) {
+        gradeDisplay.innerHTML = '<span class="grade-placeholder">Enter marks to see grade</span>';
+    }
+}
+
+function editResult(resultId) {
+    alert('Edit functionality will be implemented based on your requirements.');
+}
+
+function deleteResult(resultId) {
+    if (confirm('Are you sure you want to delete this result?')) {
+        alert('Delete functionality will be implemented.');
+    }
+}
+
+// Initialize tooltips for remarks
+document.addEventListener('DOMContentLoaded', function() {
+    const remarksElements = document.querySelectorAll('.remarks-preview');
+    remarksElements.forEach(element => {
+        if (element.title) {
+            element.addEventListener('mouseenter', function() {
+                this.style.color = '#374151';
+                this.style.textDecoration = 'underline';
+            });
+            element.addEventListener('mouseleave', function() {
+                this.style.color = '#6b7280';
+                this.style.textDecoration = 'none';
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

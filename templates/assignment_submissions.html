@@ -1,0 +1,816 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Assignment Submissions - {{ assignment.title }} - Yenepoya Portal{% endblock %}
+
+{% block content %}
+<div class="assignment-submissions-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <a href="{% url 'assignments' %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-title mb-0">
+                    <i class="fas fa-file-alt"></i>
+                    Assignment Submissions
+                </h1>
+            </div>
+            <p class="page-subtitle mb-0">{{ assignment.title }}</p>
+            <div class="assignment-meta">
+                <span class="badge bg-light text-dark me-2">{{ assignment.subject.name }}</span>
+                <span class="text-light-emphasis">
+                    <i class="fas fa-calendar"></i>
+                    Due: {{ assignment.due_date|date:"M d, Y H:i" }}
+                </span>
+                <span class="text-light-emphasis ms-3">
+                    <i class="fas fa-star"></i>
+                    {{ assignment.max_marks }} marks
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-section mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="stat-card submitted">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ submitted_count }}</h3>
+                        <p>Submitted</p>
+                        <div class="stat-percentage">
+                            {{ submitted_count|floatformat:0 }}/{{ total_students }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card pending">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ pending_students|length }}</h3>
+                        <p>Pending</p>
+                        <div class="stat-percentage">
+                            {{ pending_students|length }}/{{ total_students }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card graded">
+                    <div class="stat-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="gradedCount">0</h3>
+                        <p>Graded</p>
+                        <div class="stat-percentage">
+                            Evaluation Progress
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card late">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="lateCount">0</h3>
+                        <p>Late Submissions</p>
+                        <div class="stat-percentage">
+                            Need Attention
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Details -->
+    <div class="assignment-details-section mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    Assignment Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <p class="assignment-description">{{ assignment.description }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        {% if assignment.question_file %}
+                            <div class="question-file-section">
+                                <h6>Question File:</h6>
+                                <a href="{{ assignment.question_file.url }}" class="btn btn-outline-primary btn-sm" download>
+                                    <i class="fas fa-download"></i>
+                                    Download Question
+                                </a>
+                            </div>
+                        {% endif %}
+                        <div class="assignment-timeline">
+                            <small class="text-muted">
+                                Created: {{ assignment.created_at|date:"M d, Y H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submissions List -->
+    <div class="submissions-section">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i>
+                    Student Submissions
+                </h5>
+                <div class="submissions-filter">
+                    <select class="form-select form-select-sm" id="submissionFilter">
+                        <option value="all">All Students</option>
+                        <option value="submitted">Submitted Only</option>
+                        <option value="pending">Pending Only</option>
+                        <option value="graded">Graded</option>
+                        <option value="ungraded">Ungraded</option>
+                        <option value="late">Late Submissions</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if submissions or pending_students %}
+                    <!-- Submitted Assignments -->
+                    {% for submission in submissions %}
+                    <div class="submission-item {% if submission.is_late %}late-submission{% endif %}" 
+                         data-status="submitted {% if submission.marks %}graded{% else %}ungraded{% endif %}">
+                        <div class="submission-header">
+                            <div class="student-info">
+                                <div class="student-name">
+                                    <strong>{{ submission.student.user.get_full_name }}</strong>
+                                    <span class="campus-id">({{ submission.student.campus_id }})</span>
+                                </div>
+                                <div class="submission-meta">
+                                    <span class="submitted-time">
+                                        <i class="fas fa-clock"></i>
+                                        Submitted: {{ submission.submitted_at|date:"M d, Y H:i" }}
+                                    </span>
+                                    {% if submission.is_late %}
+                                        <span class="badge bg-warning ms-2">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Late Submission
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="submission-actions">
+                                <a href="{{ submission.answer_file.url }}" 
+                                   class="btn btn-outline-primary btn-sm" download>
+                                    <i class="fas fa-download"></i>
+                                    Download
+                                </a>
+                                <button class="btn btn-primary btn-sm" 
+                                        onclick="showGradingModal('{{ submission.id }}', '{{ submission.student.user.get_full_name|escapejs }}', '{{ submission.marks|default:'' }}', '{{ submission.feedback|default:''|escapejs }}')">
+                                    <i class="fas fa-star"></i>
+                                    {% if submission.marks %}Edit Grade{% else %}Grade{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {% if submission.marks %}
+                        <div class="grading-info">
+                            <div class="grade-display">
+                                <span class="marks-awarded">
+                                    <strong>{{ submission.marks }}/{{ assignment.max_marks }}</strong>
+                                    {% widthratio submission.marks assignment.max_marks 100 as percentage %}
+                                    ({{ percentage|floatformat:1 }}%)
+                                </span>
+                                {% if submission.feedback %}
+                                    <div class="feedback-display mt-2">
+                                        <strong>Feedback:</strong>
+                                        <p class="feedback-text">{{ submission.feedback }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Pending Submissions -->
+                    {% for student in pending_students %}
+                    <div class="submission-item pending-item" data-status="pending">
+                        <div class="submission-header">
+                            <div class="student-info">
+                                <div class="student-name">
+                                    <strong>{{ student.user.get_full_name }}</strong>
+                                    <span class="campus-id">({{ student.campus_id }})</span>
+                                </div>
+                                <div class="submission-meta">
+                                    <span class="pending-status">
+                                        <i class="fas fa-hourglass-half"></i>
+                                        Not submitted yet
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="submission-actions">
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock"></i>
+                                    Pending
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No submissions yet</p>
+                        <p class="text-muted">Students haven't started submitting their assignments.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grading Modal -->
+<div class="modal fade" id="gradingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-star"></i>
+                    Grade Assignment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="student-info-modal mb-3">
+                        <h6 class="student-name-modal">Student Name</h6>
+                        <p class="text-muted">{{ assignment.title }}</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="marks" class="form-label">
+                                    Marks Obtained
+                                    <span class="text-muted">(out of {{ assignment.max_marks }})</span>
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       name="marks" 
+                                       id="marks" 
+                                       min="0" 
+                                       max="{{ assignment.max_marks }}" 
+                                       step="0.01"
+                                       required>
+                                <div class="form-text">
+                                    Enter marks between 0 and {{ assignment.max_marks }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="percentage-display">
+                                <label class="form-label">Percentage</label>
+                                <div class="percentage-value" id="percentageDisplay">0%</div>
+                                <div class="grade-preview" id="gradePreview">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="feedback" class="form-label">Feedback (Optional)</label>
+                        <textarea class="form-control" 
+                                  name="feedback" 
+                                  id="feedback" 
+                                  rows="4" 
+                                  placeholder="Provide feedback to help the student understand their performance..."></textarea>
+                    </div>
+                    
+                    <input type="hidden" name="submission_id" id="submission_id_modal">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Grade
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.assignment-submissions-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    margin: -1.5rem -1.5rem 2rem -1.5rem;
+    border-radius: 0 0 20px 20px;
+}
+
+.assignment-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.stats-section {
+    margin: 2rem 0;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border-left: 4px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.submitted {
+    border-left-color: #10b981;
+}
+
+.stat-card.pending {
+    border-left-color: #f59e0b;
+}
+
+.stat-card.graded {
+    border-left-color: #3b82f6;
+}
+
+.stat-card.late {
+    border-left-color: #ef4444;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-card.submitted .stat-icon {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+.stat-card.pending .stat-icon {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.stat-card.graded .stat-icon {
+    background: #dbeafe;
+    color: #3b82f6;
+}
+
+.stat-card.late .stat-icon {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+    color: #1e293b;
+}
+
+.stat-content p {
+    color: #64748b;
+    margin: 0;
+    font-weight: 500;
+}
+
+.stat-percentage {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
+}
+
+.assignment-details-section .assignment-description {
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.question-file-section {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.question-file-section h6 {
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.submissions-filter {
+    min-width: 200px;
+}
+
+.submission-item {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.submission-item:hover {
+    border-color: #667eea;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.submission-item.late-submission {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fefbf3, #ffffff);
+}
+
+.submission-item.pending-item {
+    border-color: #e5e7eb;
+    background: #f8fafc;
+}
+
+.submission-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.student-name {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.campus-id {
+    color: #64748b;
+    font-weight: normal;
+}
+
+.submission-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.submitted-time,
+.pending-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.submission-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.grading-info {
+    background: #f0fdf4;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #10b981;
+}
+
+.marks-awarded {
+    font-size: 1.1rem;
+    color: #059669;
+    font-weight: 600;
+}
+
+.feedback-text {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+    color: #374151;
+    line-height: 1.5;
+}
+
+.student-info-modal h6 {
+    color: #1e293b;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.percentage-display {
+    text-align: center;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.percentage-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.grade-preview {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    background: #e5e7eb;
+    color: #64748b;
+}
+
+.grade-preview.grade-a {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.grade-preview.grade-b {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.grade-preview.grade-c {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.grade-preview.grade-d,
+.grade-preview.grade-f {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+/* Filter animations */
+.submission-item.filtered-out {
+    display: none;
+}
+
+.submission-item.filtered-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .assignment-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .submission-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .submission-actions {
+        justify-content: flex-end;
+    }
+    
+    .stat-card {
+        text-align: center;
+        flex-direction: column;
+    }
+    
+    .stat-icon {
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSubmissionsPage();
+    calculateStatistics();
+});
+
+function calculateStatistics() {
+    // Calculate graded submissions count
+    const gradedCount = document.querySelectorAll('.submission-item[data-status*="graded"]').length;
+    document.getElementById('gradedCount').textContent = gradedCount;
+    
+    // Calculate late submissions count
+    const lateCount = document.querySelectorAll('.submission-item.late-submission').length;
+    document.getElementById('lateCount').textContent = lateCount;
+}
+
+function initializeSubmissionsPage() {
+    // Initialize filter functionality
+    const filterSelect = document.getElementById('submissionFilter');
+    if (filterSelect) {
+        filterSelect.addEventListener('change', filterSubmissions);
+    }
+    
+    // Initialize grading modal
+    initializeGradingModal();
+    
+    // Initialize percentage calculation
+    initializePercentageCalculation();
+}
+
+function filterSubmissions() {
+    const filter = document.getElementById('submissionFilter').value;
+    const submissions = document.querySelectorAll('.submission-item');
+    
+    submissions.forEach(item => {
+        const status = item.dataset.status;
+        let shouldShow = false;
+        
+        switch (filter) {
+            case 'all':
+                shouldShow = true;
+                break;
+            case 'submitted':
+                shouldShow = status.includes('submitted');
+                break;
+            case 'pending':
+                shouldShow = status.includes('pending');
+                break;
+            case 'graded':
+                shouldShow = status.includes('graded');
+                break;
+            case 'ungraded':
+                shouldShow = status.includes('submitted') && !status.includes('graded');
+                break;
+            case 'late':
+                shouldShow = item.classList.contains('late-submission');
+                break;
+        }
+        
+        if (shouldShow) {
+            item.classList.remove('filtered-out');
+            item.classList.add('filtered-in');
+        } else {
+            item.classList.add('filtered-out');
+            item.classList.remove('filtered-in');
+        }
+    });
+}
+
+function showGradingModal(submissionId, studentName, currentMarks, currentFeedback) {
+    const modal = document.getElementById('gradingModal');
+    const studentNameElement = modal.querySelector('.student-name-modal');
+    const marksInput = modal.querySelector('#marks');
+    const feedbackInput = modal.querySelector('#feedback');
+    const submissionIdInput = modal.querySelector('#submission_id_modal');
+    
+    // Set values
+    studentNameElement.textContent = studentName;
+    marksInput.value = currentMarks || '';
+    feedbackInput.value = currentFeedback || '';
+    submissionIdInput.value = submissionId;
+    
+    // Update percentage display if marks are provided
+    if (currentMarks) {
+        updatePercentageDisplay(parseFloat(currentMarks));
+    } else {
+        updatePercentageDisplay(0);
+    }
+    
+    // Show modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+function initializeGradingModal() {
+    const modal = document.getElementById('gradingModal');
+    if (!modal) return;
+    
+    // Clear form when modal is hidden
+    modal.addEventListener('hidden.bs.modal', function() {
+        const form = modal.querySelector('form');
+        if (form) {
+            form.reset();
+            updatePercentageDisplay(0);
+        }
+    });
+}
+
+function initializePercentageCalculation() {
+    const marksInput = document.getElementById('marks');
+    if (marksInput) {
+        marksInput.addEventListener('input', function() {
+            const marks = parseFloat(this.value) || 0;
+            updatePercentageDisplay(marks);
+        });
+    }
+}
+
+function updatePercentageDisplay(marks) {
+    const maxMarks = {{ assignment.max_marks }};
+    const percentage = (marks / maxMarks) * 100;
+    
+    const percentageDisplay = document.getElementById('percentageDisplay');
+    const gradePreview = document.getElementById('gradePreview');
+    
+    if (percentageDisplay) {
+        percentageDisplay.textContent = percentage.toFixed(1) + '%';
+    }
+    
+    if (gradePreview) {
+        let grade = 'F';
+        let gradeClass = 'grade-f';
+        
+        if (percentage >= 90) {
+            grade = 'A+';
+            gradeClass = 'grade-a';
+        } else if (percentage >= 80) {
+            grade = 'A';
+            gradeClass = 'grade-a';
+        } else if (percentage >= 70) {
+            grade = 'B+';
+            gradeClass = 'grade-b';
+        } else if (percentage >= 60) {
+            grade = 'B';
+            gradeClass = 'grade-b';
+        } else if (percentage >= 50) {
+            grade = 'C';
+            gradeClass = 'grade-c';
+        } else if (percentage >= 40) {
+            grade = 'D';
+            gradeClass = 'grade-d';
+        }
+        
+        gradePreview.textContent = grade;
+        gradePreview.className = 'grade-preview ' + gradeClass;
+    }
+}
+
+// Export functionality
+function exportSubmissions() {
+    // This would implement CSV/Excel export of submissions
+    alert('Export functionality can be implemented based on your requirements');
+}
+
+// Bulk actions
+function selectAllSubmissions() {
+    const checkboxes = document.querySelectorAll('.submission-checkbox');
+    checkboxes.forEach(cb => cb.checked = true);
+}
+
+function deselectAllSubmissions() {
+    const checkboxes = document.querySelectorAll('.submission-checkbox');
+    checkboxes.forEach(cb => cb.checked = false);
+}
+</script>
+{% endblock %}

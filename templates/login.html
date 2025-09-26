@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Login - Yenepoya Portal{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/login.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block login_content %}
+<div class="login-container">
+    <div class="login-content">
+        <div class="login-header">
+            <div class="logo-container">
+                <i class="fas fa-graduation-cap"></i>
+                <h1>Yenepoya Portal</h1>
+            </div>
+        </div>
+
+        <div class="login-form-section">
+            <div class="login-card">
+                <div class="card-header">
+                    <h3>Sign In</h3>
+                    <p>Enter your credentials to access your account</p>
+                </div>
+
+                <form method="post" class="login-form" id="loginForm">
+                    {% csrf_token %}
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" role="alert">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label for="{{ form.campus_id.id_for_label }}">{{ form.campus_id.label }}</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user"></i>
+                            {{ form.campus_id }}
+                        </div>
+                        {% if form.campus_id.errors %}
+                            <div class="error-message">
+                                {% for error in form.campus_id.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            {{ form.password }}
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="error-message">
+                                {% for error in form.password.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="login-btn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Sign In
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const btn = document.getElementById('loginBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnSpinner = btn.querySelector('.btn-spinner');
+    
+    btn.disabled = true;
+    btnText.classList.add('d-none');
+    btnSpinner.classList.remove('d-none');
+});
+</script>
+{% endblock %}

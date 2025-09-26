@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+
+{% block title %}Doubt Clearance - Yenepoya Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-question-circle"></i> Doubt Clearance</h2>
+                {% if is_student %}
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#askDoubtModal">
+                    <i class="fas fa-plus"></i> Ask a Doubt
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if is_student %}
+    <!-- Student View -->
+    <div class="row">
+        {% for doubt in doubts %}
+        <div class="col-12 mb-4">
+            <div class="doubt-card {% if doubt.is_resolved %}doubt-resolved{% endif %}">
+                <div class="doubt-header">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="doubt-subject">{{ doubt.subject.name }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> {{ doubt.asked_at|date:"M d, Y H:i" }}
+                            </small>
+                        </div>
+                        <div>
+                            {% if doubt.is_resolved %}
+                                <span class="badge bg-success">Resolved</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="doubt-question">
+                    <div class="question-icon">
+                        <i class="fas fa-question text-primary"></i>
+                    </div>
+                    <div class="question-content">
+                        <p>{{ doubt.question }}</p>
+                    </div>
+                </div>
+                
+                {% if doubt.replies.all %}
+                <div class="doubt-replies">
+                    {% for reply in doubt.replies.all %}
+                    <div class="doubt-reply">
+                        <div class="reply-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ reply.teacher.user.get_full_name }}</strong>
+                                    <small class="text-muted">{{ reply.teacher.qualification }}</small>
+                                </div>
+                                <small class="text-muted">{{ reply.replied_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                        </div>
+                        <div class="reply-content">
+                            <p>{{ reply.reply }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No doubts yet</h4>
+                <p class="text-muted">Have a question? Ask your teachers for clarification.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#askDoubtModal">
+                    <i class="fas fa-plus"></i> Ask Your First Doubt
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Ask Doubt Modal -->
+    <div class="modal fade" id="askDoubtModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ask a Doubt</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Subject</label>
+                            {{ form.subject }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Your Question</label>
+                            {{ form.question }}
+                            <div class="form-text">Be specific about your doubt for better answers</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Submit Question
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Teacher View -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-inbox"></i> Student Doubts</h5>
+                </div>
+                <div class="card-body">
+                    {% if doubts %}
+                    {% for doubt in doubts %}
+                    <div class="doubt-item mb-4 {% if doubt.is_resolved %}resolved{% endif %}">
+                        <div class="doubt-student-info mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ doubt.student.user.get_full_name }}</strong>
+                                    <span class="badge bg-light text-dark ms-2">{{ doubt.student.campus_id }}</span>
+                                    <span class="badge bg-primary ms-1">{{ doubt.subject.name }}</span>
+                                </div>
+                                <div>
+                                    <small class="text-muted">{{ doubt.asked_at|date:"M d, Y H:i" }}</small>
+                                    {% if doubt.is_resolved %}
+                                        <span class="badge bg-success ms-2">Resolved</span>
+                                    {% else %}
+                                        <span class="badge bg-warning ms-2">Pending</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="doubt-question-text mb-3">
+                            <p class="mb-0">{{ doubt.question }}</p>
+                        </div>
+                        
+                        {% if not doubt.is_resolved %}
+                        <form method="post" class="reply-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="doubt_id" value="{{ doubt.id }}">
+                            <div class="mb-3">
+                                <textarea class="form-control" name="reply" rows="3" placeholder="Write your reply..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-reply"></i> Reply
+                            </button>
+                        </form>
+                        {% else %}
+                        <div class="replies">
+                            {% for reply in doubt.replies.all %}
+                            <div class="reply-item">
+                                <div class="d-flex justify-content-between">
+                                    <strong>Your Reply:</strong>
+                                    <small class="text-muted">{{ reply.replied_at|date:"M d, Y H:i" }}</small>
+                                </div>
+                                <p class="mb-0">{{ reply.reply }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No student doubts yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Doubt Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Total Doubts</span>
+                            <strong>{{ doubts.count }}</strong>
+                        </div>
+                    </div>
+                    <div class="stat-item mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Pending</span>
+                            <strong class="text-warning">{{ doubts|length }}</strong>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="d-flex justify-content-between">
+                            <span>Resolved</span>
+                            <strong class="text-success">0</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.doubt-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-left: 4px solid #007bff;
+}
+
+.doubt-resolved {
+    border-left-color: #28a745;
+}
+
+.doubt-question {
+    display: flex;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.question-icon {
+    font-size: 1.5rem;
+}
+
+.doubt-replies {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.doubt-reply {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 3px solid #28a745;
+}
+
+.doubt-item {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-left: 4px solid #ffc107;
+}
+
+.doubt-item.resolved {
+    border-left-color: #28a745;
+}
+
+.reply-form {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.reply-item {
+    background-color: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+}
+
+.stat-item {
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+}
+</style>
+{% endblock %}

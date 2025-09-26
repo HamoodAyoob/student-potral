@@ -1,0 +1,276 @@
+/* Mobile-First Enhanced CSS */
+@media (max-width: 768px) {
+    /* Enhanced Sidebar for Mobile */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 85vw;
+        max-width: 300px;
+        height: 100vh;
+        background: #1e293b;
+        z-index: 9999;
+        transition: all 0.3s ease;
+        overflow-y: auto;
+    }
+    
+    .sidebar.show {
+        left: 0;
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Mobile Overlay */
+    .mobile-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .mobile-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    /* Enhanced Main Content */
+    .main-content {
+        margin-left: 0;
+        padding-top: 70px;
+    }
+    
+    /* Touch-Friendly Navigation */
+    .sidebar-nav .nav-link {
+        padding: 1.25rem 1.5rem;
+        font-size: 1.1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Mobile Header Improvements */
+    .top-header {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        padding: 0.75rem 1rem;
+        height: 60px;
+    }
+    
+    .sidebar-toggle {
+        display: flex !important;
+        background: none;
+        border: none;
+        color: #64748b;
+        font-size: 1.5rem;
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .sidebar-toggle:hover {
+        background: rgba(100, 116, 139, 0.1);
+    }
+    
+    /* Mobile-Optimized Cards */
+    .card {
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Touch-Friendly Buttons */
+    .btn {
+        min-height: 44px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 8px;
+        touch-action: manipulation;
+    }
+    
+    /* Mobile Form Improvements */
+    .form-control,
+    .form-select {
+        min-height: 44px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+    
+    /* Mobile Tables */
+    .table-responsive {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Mobile Timetable */
+    .timetable-container {
+        margin: 0 -1rem;
+        border-radius: 0;
+    }
+    
+    .timetable {
+        font-size: 0.8rem;
+    }
+    
+    .timetable th,
+    .timetable td {
+        padding: 0.5rem 0.25rem;
+        min-width: 80px;
+    }
+    
+    /* Mobile Stats Cards */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    /* Mobile Assignment Cards */
+    .assignments-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .assignment-card {
+        margin-bottom: 1rem;
+    }
+    
+    /* Mobile Material Cards */
+    .materials-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Mobile Profile */
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+    }
+    
+    /* Mobile Results */
+    .subjects-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Floating Action Button */
+    .fab {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+        touch-action: manipulation;
+    }
+    
+    .fab:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    /* Bottom Navigation (Optional) */
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 1px solid #e5e7eb;
+        padding: 0.5rem 0;
+        display: none; /* Enable if needed */
+        z-index: 1000;
+    }
+    
+    .bottom-nav-items {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+    
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #6b7280;
+        text-decoration: none;
+        padding: 0.5rem;
+        font-size: 0.75rem;
+        transition: color 0.2s;
+    }
+    
+    .bottom-nav-item.active {
+        color: #667eea;
+    }
+    
+    .bottom-nav-item i {
+        font-size: 1.2rem;
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* Tablet Optimizations */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .sidebar {
+        width: 240px;
+    }
+    
+    .main-content {
+        margin-left: 240px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .assignments-grid,
+    .materials-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Touch Improvements */
+@media (hover: none) {
+    .card:hover,
+    .btn:hover {
+        transform: none;
+    }
+    
+    .card:active,
+    .btn:active {
+        transform: scale(0.98);
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .main-content {
+        background: #1f2937;
+        color: #f9fafb;
+    }
+    
+    .card {
+        background: #374151;
+        color: #f9fafb;
+        border-color: #4b5563;
+    }
+}

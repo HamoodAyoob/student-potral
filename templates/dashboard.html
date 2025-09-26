@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Yenepoya Portal{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="welcome-card">
+            <div class="welcome-content">
+                <h1 class="welcome-title">
+                    Welcome, {{ user.get_full_name|default:user.username }}!
+                </h1>
+                <p class="welcome-subtitle">
+                    {% if is_student %}
+                        Student Dashboard - {{ student.batch }}, Semester {{ student.semester }}
+                    {% elif is_teacher %}
+                        Teacher Dashboard - {{ teacher.department }} Department
+                    {% endif %}
+                </p>
+            </div>
+            <div class="welcome-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+        </div>
+    </div>
+
+    {% if is_student %}
+    <!-- Student Dashboard -->
+    <div class="dashboard-grid">
+        <!-- Stats Cards -->
+        <div class="stats-row">
+            <div class="stat-card attendance-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ attendance_percentage }}%</h3>
+                    <p>Overall Attendance</p>
+                    <div class="stat-progress">
+                        <div class="progress-bar" style="width: {{ attendance_percentage }}%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card assignments-card">
+                <div class="stat-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ pending_assignments_count }}</h3>
+                    <p>Pending Assignments</p>
+                    <small>Due soon</small>
+                </div>
+            </div>
+
+            <div class="stat-card doubts-card">
+                <div class="stat-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ unresolved_doubts }}</h3>
+                    <p>Unresolved Doubts</p>
+                    <small>Awaiting response</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Pending Assignments -->
+            <div class="dashboard-widget">
+                <div class="widget-header">
+                    <h4><i class="fas fa-tasks"></i> Pending Assignments</h4>
+                    <a href="{% url 'assignments' %}" class="view-all-btn">View All</a>
+                </div>
+                <div class="widget-content">
+                    {% if pending_assignments %}
+                        {% for assignment in pending_assignments|slice:":5" %}
+                        <div class="assignment-item">
+                            <div class="assignment-info">
+                                <h5>{{ assignment.title }}</h5>
+                                <p class="subject-name">{{ assignment.subject.name }}</p>
+                                <p class="due-date">
+                                    <i class="fas fa-clock"></i>
+                                    Due: {{ assignment.due_date|date:"M d, Y H:i" }}
+                                </p>
+                            </div>
+                            <div class="assignment-status">
+                                {% if assignment.is_overdue %}
+                                    <span class="status-badge overdue">Overdue</span>
+                                {% else %}
+                                    <span class="status-badge pending">Pending</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-check-circle"></i>
+                            <p>No pending assignments</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Materials -->
+            <div class="dashboard-widget">
+                <div class="widget-header">
+                    <h4><i class="fas fa-book"></i> Recent Materials</h4>
+                    <a href="{% url 'materials' %}" class="view-all-btn">View All</a>
+                </div>
+                <div class="widget-content">
+                    {% if recent_materials %}
+                        {% for material in recent_materials %}
+                        <div class="material-item">
+                            <div class="material-icon">
+                                {% if material.material_type == 'notes' %}
+                                    <i class="fas fa-sticky-note"></i>
+                                {% elif material.material_type == 'question_bank' %}
+                                    <i class="fas fa-question"></i>
+                                {% elif material.material_type == 'slides' %}
+                                    <i class="fas fa-presentation"></i>
+                                {% else %}
+                                    <i class="fas fa-file"></i>
+                                {% endif %}
+                            </div>
+                            <div class="material-info">
+                                <h5>{{ material.title }}</h5>
+                                <p>{{ material.subject.name }}</p>
+                                <small>{{ material.uploaded_at|timesince }} ago</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <p>No materials available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Results -->
+            <div class="dashboard-widget">
+                <div class="widget-header">
+                    <h4><i class="fas fa-chart-bar"></i> Recent Results</h4>
+                    <a href="{% url 'exam_results' %}" class="view-all-btn">View All</a>
+                </div>
+                <div class="widget-content">
+                    {% if recent_results %}
+                        {% for result in recent_results %}
+                        <div class="result-item">
+                            <div class="result-info">
+                                <h5>{{ result.subject.name }}</h5>
+                                <p>{{ result.get_exam_type_display }}</p>
+                                <small>{{ result.published_at|date:"M d, Y" }}</small>
+                            </div>
+                            <div class="result-grade">
+                                <span class="grade-badge grade-{{ result.grade|lower }}">{{ result.grade }}</span>
+                                <p class="marks">{{ result.marks_obtained }}/{{ result.total_marks }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <p>No results available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="dashboard-widget quick-actions">
+                <div class="widget-header">
+                    <h4><i class="fas fa-bolt"></i> Quick Actions</h4>
+                </div>
+                <div class="widget-content">
+                    <div class="action-buttons">
+                        <a href="{% url 'timetable' %}" class="action-btn">
+                            <i class="fas fa-calendar"></i>
+                            <span>View Timetable</span>
+                        </a>
+                        <a href="{% url 'doubt_clearance' %}" class="action-btn">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Ask Doubt</span>
+                        </a>
+                        <a href="{% url 'hall_ticket' %}" class="action-btn">
+                            <i class="fas fa-ticket-alt"></i>
+                            <span>Hall Ticket</span>
+                        </a>
+                        <a href="{% url 'profile' %}" class="action-btn">
+                            <i class="fas fa-user-edit"></i>
+                            <span>Edit Profile</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif is_teacher %}
+    <!-- Teacher Dashboard -->
+    <div class="dashboard-grid">
+        <!-- Stats Cards -->
+        <div class="stats-row">
+            <div class="stat-card subjects-card">
+                <div class="stat-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ subjects_count }}</h3>
+                    <p>Subjects Teaching</p>
+                    <small>This semester</small>
+                </div>
+            </div>
+
+            <div class="stat-card doubts-card">
+                <div class="stat-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ pending_doubts }}</h3>
+                    <p>Pending Doubts</p>
+                    <small>Awaiting response</small>
+                </div>
+            </div>
+
+            <div class="stat-card assignments-card">
+                <div class="stat-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ recent_assignments|length }}</h3>
+                    <p>Recent Assignments</p>
+                    <small>This week</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- My Subjects -->
+            <div class="dashboard-widget">
+                <div class="widget-header">
+                    <h4><i class="fas fa-book-open"></i> My Subjects</h4>
+                </div>
+                <div class="widget-content">
+                    {% if subjects %}
+                        {% for subject in subjects %}
+                        <div class="subject-item">
+                            <div class="subject-info">
+                                <h5>{{ subject.name }}</h5>
+                                <p>{{ subject.code }} - Semester {{ subject.semester }}</p>
+                                <small>{{ subject.credits }} Credits</small>
+                            </div>
+                            <div class="subject-actions">
+                                <a href="{% url 'attendance' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </a>
+                                <a href="{% url 'assignments' %}" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-tasks"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-book"></i>
+                            <p>No subjects assigned</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Assignments -->
+            <div class="dashboard-widget">
+                <div class="widget-header">
+                    <h4><i class="fas fa-tasks"></i> Recent Assignments</h4>
+                    <a href="{% url 'assignments' %}" class="view-all-btn">View All</a>
+                </div>
+                <div class="widget-content">
+                    {% if recent_assignments %}
+                        {% for assignment in recent_assignments %}
+                        <div class="assignment-item">
+                            <div class="assignment-info">
+                                <h5>{{ assignment.title }}</h5>
+                                <p class="subject-name">{{ assignment.subject.name }}</p>
+                                <p class="due-date">
+                                    <i class="fas fa-clock"></i>
+                                    Due: {{ assignment.due_date|date:"M d, Y H:i" }}
+                                </p>
+                            </div>
+                            <div class="assignment-stats">
+                                <span class="submission-count">
+                                    {{ assignment.submissions.count }} submissions
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-tasks"></i>
+                            <p>No recent assignments</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Submissions -->
+            <div class="dashboard-widget">
+                <div class="widget-header">
+                    <h4><i class="fas fa-upload"></i> Recent Submissions</h4>
+                </div>
+                <div class="widget-content">
+                    {% if recent_submissions %}
+                        {% for submission in recent_submissions %}
+                        <div class="submission-item">
+                            <div class="submission-info">
+                                <h5>{{ submission.assignment.title }}</h5>
+                                <p>{{ submission.student.user.get_full_name }}</p>
+                                <small>{{ submission.submitted_at|timesince }} ago</small>
+                            </div>
+                            <div class="submission-status">
+                                {% if submission.marks %}
+                                    <span class="status-badge graded">Graded</span>
+                                {% else %}
+                                    <span class="status-badge pending">Pending</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No recent submissions</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="dashboard-widget quick-actions">
+                <div class="widget-header">
+                    <h4><i class="fas fa-bolt"></i> Quick Actions</h4>
+                </div>
+                <div class="widget-content">
+                    <div class="action-buttons">
+                        <a href="{% url 'assignments' %}" class="action-btn">
+                            <i class="fas fa-plus"></i>
+                            <span>Create Assignment</span>
+                        </a>
+                        <a href="{% url 'attendance' %}" class="action-btn">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span>Mark Attendance</span>
+                        </a>
+                        <a href="{% url 'materials' %}" class="action-btn">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload Material</span>
+                        </a>
+                        <a href="{% url 'doubt_clearance' %}" class="action-btn">
+                            <i class="fas fa-reply"></i>
+                            <span>Answer Doubts</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}
