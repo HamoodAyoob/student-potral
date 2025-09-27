@@ -119,26 +119,11 @@
         {% if recent_materials %}
             {% for material in recent_materials %}
             <div class="material-item">
-                <div class="material-icon">
-                    {% if material.material_type == 'notes' %}
-                        <i class="fas fa-sticky-note text-primary"></i>
-                    {% elif material.material_type == 'question_bank' %}
-                        <i class="fas fa-clipboard-question text-warning"></i>
-                    {% elif material.material_type == 'reference' %}
-                        <i class="fas fa-bookmark text-info"></i>
-                    {% elif material.material_type == 'slides' %}
-                        <i class="fas fa-presentation-screen text-success"></i>
-                    {% else %}
-                        <i class="fas fa-file text-secondary"></i>
-                    {% endif %}
-                </div>
-                <div class="material-content">
-                    <div class="material-info">
-                        <h5>{{ material.title }}</h5>
-                        <p class="subject-name">{{ material.subject.name }}</p>
-                        <p class="material-teacher">By {{ material.teacher.user.get_full_name }}</p>
-                        <small class="material-date">{{ material.uploaded_at|timesince }} ago</small>
-                    </div>
+                <div class="material-info">
+                    <h5>{{ material.title }}</h5>
+                    <p class="subject-name">{{ material.subject.name }}</p>
+                    <p class="material-teacher">By {{ material.teacher.user.get_full_name }}</p>
+                    <small class="material-date">{{ material.uploaded_at|timesince }} ago</small>
                     <div class="material-actions">
                         <a href="{{ material.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
                             <i class="fas fa-eye"></i> View
