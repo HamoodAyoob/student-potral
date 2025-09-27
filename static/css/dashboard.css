@@ -240,7 +240,7 @@
 }
 
 /* Assignment Items */
-.assignment-item, .material-item, .result-item, .subject-item, .submission-item {
+.assignment-item, .result-item, .subject-item, .submission-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -252,21 +252,21 @@
     background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
 }
 
-.assignment-item:hover, .material-item:hover, .result-item:hover, .subject-item:hover, .submission-item:hover {
+.assignment-item:hover, .result-item:hover, .subject-item:hover, .submission-item:hover {
     border-color: #667eea;
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
     transform: translateX(5px);
 }
 
-.assignment-item:last-child, .material-item:last-child, .result-item:last-child, .subject-item:last-child, .submission-item:last-child {
+.assignment-item:last-child, .result-item:last-child, .subject-item:last-child, .submission-item:last-child {
     margin-bottom: 0;
 }
 
-.assignment-info, .material-info, .result-info, .subject-info, .submission-info {
+.assignment-info, .result-info, .subject-info, .submission-info {
     flex: 1;
 }
 
-.assignment-info h5, .material-info h5, .result-info h5, .subject-info h5, .submission-info h5 {
+.assignment-info h5, .result-info h5, .subject-info h5, .submission-info h5 {
     margin: 0 0 0.25rem 0;
     font-size: 1.1rem;
     font-weight: 600;
@@ -295,8 +295,31 @@
 /* Material Items */
 .material-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+}
+
+.material-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.material-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    transform: translateX(5px);
+}
+
+.material-item:last-child {
+    margin-bottom: 0;
 }
 
 .material-icon {
@@ -312,8 +335,46 @@
     font-size: 1.2rem;
 }
 
+.material-teacher {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+
+.material-date {
+    color: #999;
+    font-size: 0.85rem;
+}
+
 .material-info {
     flex: 1;
+}
+
+.material-info h5 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d3436;
+}
+
+.material-info p {
+    color: #667eea;
+    font-weight: 500;
+    margin: 0.25rem 0;
+}
+
+.material-info small {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.material-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.material-actions .btn {
+    min-width: 80px;
 }
 
 /* Status Badges */
