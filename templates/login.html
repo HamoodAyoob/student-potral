@@ -84,25 +84,29 @@
 
 <style>
 .login-container {
-    min-height: 100vh;
+    height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 10px;
+    overflow: hidden;
 }
 
 .login-wrapper {
     width: 100%;
-    max-width: 400px;
+    max-width: 380px;
 }
 
 .login-card {
     background: white;
-    border-radius: 15px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
     overflow: hidden;
     animation: slideUp 0.6s ease-out;
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes slideUp {
@@ -118,34 +122,36 @@
 
 .login-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 40px 30px;
+    padding: 25px 25px;
     text-align: center;
     color: white;
+    flex-shrink: 0;
 }
 
 .logo-container .logo-icon {
-    font-size: 3rem;
-    margin-bottom: 10px;
+    font-size: 2.5rem;
+    margin-bottom: 8px;
 }
 
 .logo-container h1 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 600;
     margin: 0;
 }
 
 .logo-container .subtitle {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     opacity: 0.9;
-    margin: 5px 0 0 0;
+    margin: 3px 0 0 0;
 }
 
 .login-body {
-    padding: 30px;
+    padding: 20px 25px;
+    flex: 1;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .form-label {
@@ -196,10 +202,11 @@
 }
 
 .login-footer {
-    padding: 20px 30px;
+    padding: 15px 25px;
     background: #f8f9fa;
     text-align: center;
     border-top: 1px solid #e1e5e9;
+    flex-shrink: 0;
 }
 
 .login-footer .smaller {
@@ -208,19 +215,31 @@
 
 @media (max-width: 480px) {
     .login-container {
-        padding: 10px;
+        padding: 5px;
     }
     
     .login-header {
-        padding: 30px 20px;
+        padding: 20px 15px;
     }
     
     .login-body {
-        padding: 20px;
+        padding: 15px;
+    }
+    
+    .login-footer {
+        padding: 10px 15px;
+    }
+    
+    .logo-container .logo-icon {
+        font-size: 2rem;
     }
     
     .logo-container h1 {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
+    }
+    
+    .form-group {
+        margin-bottom: 12px;
     }
 }
 </style>
