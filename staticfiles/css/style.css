@@ -30,11 +30,12 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: var(--sidebar-width);
+    width: var(--sidebar-width) !important;
     height: 100vh;
     background: #1e293b;
     color: white;
-    overflow-y: auto;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     transition: transform 0.3s ease;
     z-index: 1000;
 }
@@ -66,6 +67,8 @@ body {
 }
 
 .sidebar-nav {
+    width: 100%;
+    max-width: 100%;
     padding: 1rem 0;
 }
 
@@ -79,6 +82,9 @@ body {
     transition: var(--transition);
     border: none;
     background: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar-nav .nav-link:hover {
@@ -833,4 +839,67 @@ body {
 
 .slide-in {
     animation: slideIn 0.3s ease-out;
+}
+
+.bell-container {
+    --color: #64748b;
+    --size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    font-size: var(--size);
+    user-select: none;
+    fill: var(--color);
+    margin: 0;
+}
+
+.bell-container .bell-regular {
+    position: absolute;
+    animation: keyframes-fill .5s;
+}
+
+.bell-container .bell-solid {
+    position: absolute;
+    display: none;
+    animation: keyframes-fill .5s;
+}
+
+.bell-container input:checked ~ .bell-regular {
+    display: none;
+}
+
+.bell-container input:checked ~ .bell-solid {
+    display: block;
+}
+
+.bell-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+@keyframes keyframes-fill {
+    0% {
+        opacity: 0;
+    }
+    25% {
+        transform: rotate(25deg);
+    }
+    50% {
+        transform: rotate(-20deg) scale(1.2);
+    }
+    75% {
+        transform: rotate(15deg);
+    }
+}
+
+/* Adjust notification badge positioning */
+.notification-dropdown .notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
 }

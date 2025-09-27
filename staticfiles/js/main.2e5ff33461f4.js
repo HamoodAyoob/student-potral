@@ -125,8 +125,6 @@ function updateNotificationUI(notifications) {
     }
 }
 
-
-
 function createNotificationItem(notification) {
     const li = document.createElement('li');
     li.className = 'notification-item';
@@ -547,4 +545,3 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
-

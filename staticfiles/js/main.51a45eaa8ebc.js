@@ -1,6 +1,21 @@
 // Yenepoya Portal - Main JavaScript
 
+// Add immediate debugging
+console.log('Main.js script loaded');
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded event fired');
+    
+    // Check if elements exist immediately
+    const dropdown = document.getElementById('notificationDropdown');
+    const badge = document.getElementById('notificationCount');
+    const menu = document.getElementById('notificationMenu');
+    
+    console.log('Elements check:');
+    console.log('- Dropdown button:', dropdown);
+    console.log('- Badge element:', badge);
+    console.log('- Menu element:', menu);
+    
     // Initialize all components
     initSidebar();
     initDateTime();
@@ -13,6 +28,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add fade-in animation to content
     document.querySelector('.content-area')?.classList.add('fade-in');
+    
+    // Debug: Add a test button to manually test badge hiding
+    setTimeout(() => {
+        console.log('Adding test button after 1 second');
+        const testBtn = document.createElement('button');
+        testBtn.textContent = 'Test Hide Badge';
+        testBtn.style.position = 'fixed';
+        testBtn.style.top = '10px';
+        testBtn.style.right = '200px';
+        testBtn.style.zIndex = '9999';
+        testBtn.style.background = 'red';
+        testBtn.style.color = 'white';
+        testBtn.onclick = () => {
+            console.log('Manual test button clicked');
+            hideNotificationBadge();
+        };
+        document.body.appendChild(testBtn);
+        
+        // Also add direct click listener as backup
+        const dropdown2 = document.getElementById('notificationDropdown');
+        if (dropdown2) {
+            console.log('Adding backup click listener');
+            dropdown2.onclick = function(e) {
+                console.log('Direct onclick fired!');
+                hideNotificationBadge();
+                return true; // Allow default behavior
+            };
+        }
+    }, 1000);
 });
 
 // Sidebar Management
@@ -74,6 +118,45 @@ function initDateTime() {
 
 // Notifications System
 function initNotifications() {
+    console.log('=== INIT NOTIFICATIONS FUNCTION CALLED ===');
+    
+    // Handle notification dropdown toggle
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const notificationCount = document.getElementById('notificationCount');
+    const notificationMenu = document.getElementById('notificationMenu');
+    
+    console.log('Element search results:');
+    console.log('- notificationDropdown:', notificationDropdown);
+    console.log('- notificationCount:', notificationCount);  
+    console.log('- notificationMenu:', notificationMenu);
+    
+    if (notificationDropdown) {
+        console.log('SUCCESS: Found notification dropdown, adding event listeners...');
+        
+        // Simple click listener
+        notificationDropdown.addEventListener('click', function(e) {
+            console.log('🔔 NOTIFICATION CLICKED!');
+            hideNotificationBadge();
+        });
+        
+        console.log('Event listener added successfully');
+    } else {
+        console.error('❌ NOTIFICATION DROPDOWN NOT FOUND!');
+        
+        // Try to find it by other means
+        const allButtons = document.querySelectorAll('button');
+        console.log('All buttons on page:', allButtons);
+        
+        const bellIcon = document.querySelector('.fa-bell');
+        console.log('Bell icon found:', bellIcon);
+        
+        if (bellIcon) {
+            const parentButton = bellIcon.closest('button');
+            console.log('Parent button of bell icon:', parentButton);
+        }
+    }
+    
+    // Load notifications after setup
     loadNotifications();
     setInterval(loadNotifications, 30000); // Check every 30 seconds
 }
@@ -86,6 +169,26 @@ function loadNotifications() {
         })
         .catch(error => {
             console.error('Error loading notifications:', error);
+            // For testing - show mock notifications if API fails
+            const mockNotifications = [
+                {
+                    id: 1,
+                    title: 'New Assignment',
+                    message: 'Software Engineering assignment has been posted',
+                    type: 'assignment',
+                    icon: 'fas fa-tasks',
+                    time: new Date().toISOString()
+                },
+                {
+                    id: 2,
+                    title: 'Result Published', 
+                    message: 'Your Deep Learning exam result is now available',
+                    type: 'result',
+                    icon: 'fas fa-chart-bar',
+                    time: new Date(Date.now() - 3600000).toISOString()
+                }
+            ];
+            updateNotificationUI(mockNotifications);
         });
 }
 
@@ -97,8 +200,10 @@ function updateNotificationUI(notifications) {
         if (notifications.length > 0) {
             notificationCount.textContent = notifications.length;
             notificationCount.style.display = 'flex';
+            notificationCount.classList.remove('d-none');
         } else {
             notificationCount.style.display = 'none';
+            notificationCount.classList.add('d-none');
         }
     }
     
@@ -125,7 +230,29 @@ function updateNotificationUI(notifications) {
     }
 }
 
-
+function hideNotificationBadge() {
+    const notificationCount = document.getElementById('notificationCount');
+    if (notificationCount) {
+        console.log('Hiding notification badge - Element found:', notificationCount);
+        console.log('Current display style:', notificationCount.style.display);
+        console.log('Current classes:', notificationCount.className);
+        
+        // Multiple approaches to hide the badge
+        notificationCount.style.display = 'none !important';
+        notificationCount.style.visibility = 'hidden';
+        notificationCount.style.opacity = '0';
+        notificationCount.classList.add('d-none');
+        notificationCount.setAttribute('hidden', 'hidden');
+        
+        // Also try removing the text content
+        notificationCount.textContent = '';
+        
+        console.log('After hiding - display style:', notificationCount.style.display);
+        console.log('After hiding - classes:', notificationCount.className);
+    } else {
+        console.log('Notification badge element not found!');
+    }
+}
 
 function createNotificationItem(notification) {
     const li = document.createElement('li');

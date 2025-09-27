@@ -104,8 +104,8 @@
             <div class="header-right">
                 <!-- Notifications -->
                 <div class="dropdown notification-dropdown">
-                    <button class="btn btn-link dropdown-toggle" type="button" id="notificationDropdown" data-bs-toggle="dropdown">
-                        <i class="fas fa-bell"></i>
+                    <button class="btn dropdown-toggle" type="button" id="notificationDropdown" data-bs-toggle="dropdown">
+                        <i class="fa-solid fa-bell"></i>
                         <span class="notification-badge" id="notificationCount"></span>
                     </button>
                     <ul class="dropdown-menu notification-menu" id="notificationMenu">
@@ -121,7 +121,7 @@
                 
                 <!-- User Profile -->
                 <div class="dropdown user-dropdown">
-                    <button class="btn btn-link dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                    <button class="btn dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
                         <i class="fas fa-user-circle"></i>
                         <span>{{ user.get_full_name|default:user.username }}</span>
                     </button>

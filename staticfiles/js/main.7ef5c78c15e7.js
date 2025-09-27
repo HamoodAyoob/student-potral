@@ -13,6 +13,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add fade-in animation to content
     document.querySelector('.content-area')?.classList.add('fade-in');
+    
+    // Debug: Add a test button to manually test badge hiding
+    setTimeout(() => {
+        const testBtn = document.createElement('button');
+        testBtn.textContent = 'Test Hide Badge';
+        testBtn.style.position = 'fixed';
+        testBtn.style.top = '10px';
+        testBtn.style.right = '200px';
+        testBtn.style.zIndex = '9999';
+        testBtn.style.background = 'red';
+        testBtn.style.color = 'white';
+        testBtn.onclick = () => {
+            console.log('Manual test button clicked');
+            hideNotificationBadge();
+        };
+        document.body.appendChild(testBtn);
+    }, 1000);
 });
 
 // Sidebar Management
@@ -76,6 +93,50 @@ function initDateTime() {
 function initNotifications() {
     loadNotifications();
     setInterval(loadNotifications, 30000); // Check every 30 seconds
+    
+    // Handle notification dropdown toggle
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const notificationCount = document.getElementById('notificationCount');
+    
+    console.log('Init notifications - Dropdown found:', !!notificationDropdown);
+    console.log('Init notifications - Badge found:', !!notificationCount);
+    
+    if (notificationDropdown) {
+        console.log('Adding event listeners to notification dropdown');
+        
+        // Hide badge when dropdown is clicked
+        notificationDropdown.addEventListener('click', function(e) {
+            console.log('Notification dropdown clicked');
+            hideNotificationBadge();
+        });
+        
+        // Try different Bootstrap events
+        notificationDropdown.addEventListener('show.bs.dropdown', function() {
+            console.log('show.bs.dropdown event fired');
+            hideNotificationBadge();
+        });
+        
+        notificationDropdown.addEventListener('shown.bs.dropdown', function() {
+            console.log('shown.bs.dropdown event fired');
+            hideNotificationBadge();
+        });
+    }
+    
+    // Alternative approach - watch for dropdown menu visibility
+    const notificationMenu = document.getElementById('notificationMenu');
+    if (notificationMenu) {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (notificationMenu.classList.contains('show')) {
+                        console.log('Dropdown menu is now visible (mutation observer)');
+                        hideNotificationBadge();
+                    }
+                }
+            });
+        });
+        observer.observe(notificationMenu, { attributes: true });
+    }
 }
 
 function loadNotifications() {
@@ -86,6 +147,26 @@ function loadNotifications() {
         })
         .catch(error => {
             console.error('Error loading notifications:', error);
+            // For testing - show mock notifications if API fails
+            const mockNotifications = [
+                {
+                    id: 1,
+                    title: 'New Assignment',
+                    message: 'Software Engineering assignment has been posted',
+                    type: 'assignment',
+                    icon: 'fas fa-tasks',
+                    time: new Date().toISOString()
+                },
+                {
+                    id: 2,
+                    title: 'Result Published', 
+                    message: 'Your Deep Learning exam result is now available',
+                    type: 'result',
+                    icon: 'fas fa-chart-bar',
+                    time: new Date(Date.now() - 3600000).toISOString()
+                }
+            ];
+            updateNotificationUI(mockNotifications);
         });
 }
 
@@ -97,8 +178,10 @@ function updateNotificationUI(notifications) {
         if (notifications.length > 0) {
             notificationCount.textContent = notifications.length;
             notificationCount.style.display = 'flex';
+            notificationCount.classList.remove('d-none');
         } else {
             notificationCount.style.display = 'none';
+            notificationCount.classList.add('d-none');
         }
     }
     
@@ -125,7 +208,29 @@ function updateNotificationUI(notifications) {
     }
 }
 
-
+function hideNotificationBadge() {
+    const notificationCount = document.getElementById('notificationCount');
+    if (notificationCount) {
+        console.log('Hiding notification badge - Element found:', notificationCount);
+        console.log('Current display style:', notificationCount.style.display);
+        console.log('Current classes:', notificationCount.className);
+        
+        // Multiple approaches to hide the badge
+        notificationCount.style.display = 'none !important';
+        notificationCount.style.visibility = 'hidden';
+        notificationCount.style.opacity = '0';
+        notificationCount.classList.add('d-none');
+        notificationCount.setAttribute('hidden', 'hidden');
+        
+        // Also try removing the text content
+        notificationCount.textContent = '';
+        
+        console.log('After hiding - display style:', notificationCount.style.display);
+        console.log('After hiding - classes:', notificationCount.className);
+    } else {
+        console.log('Notification badge element not found!');
+    }
+}
 
 function createNotificationItem(notification) {
     const li = document.createElement('li');

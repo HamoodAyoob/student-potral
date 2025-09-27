@@ -125,6 +125,8 @@ function updateNotificationUI(notifications) {
     }
 }
 
+
+
 function createNotificationItem(notification) {
     const li = document.createElement('li');
     li.className = 'notification-item';
@@ -350,9 +352,9 @@ function updateStudentsList(students) {
         html += `
             <div class="col-md-6 col-lg-4 mb-2">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="student_${student.id}" id="student_${student.id}">
-                    <label class="form-check-label" for="student_${student.id}">
-                        <strong>${student.campus_id}</strong> - ${student.name}
+                    <input class="form-check-input" type="checkbox" name="student${student.id}" " id="student${student.id}">
+                    <label class="form-check-label" for="student${student.id}">
+                        <strong>${student.id}</strong> - ${student.name}
                     </label>
                 </div>
             </div>
@@ -545,3 +547,4 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+

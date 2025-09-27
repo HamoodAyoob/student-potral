@@ -76,6 +76,22 @@ function initDateTime() {
 function initNotifications() {
     loadNotifications();
     setInterval(loadNotifications, 30000); // Check every 30 seconds
+    
+    // Handle notification dropdown toggle
+    const notificationDropdown = document.querySelector('[data-bs-toggle="dropdown"][href="#"]');
+    if (notificationDropdown) {
+        notificationDropdown.addEventListener('click', function() {
+            hideNotificationBadge();
+        });
+        
+        // Also hide badge when dropdown is shown via Bootstrap events
+        const dropdownElement = document.getElementById('notificationDropdown');
+        if (dropdownElement) {
+            dropdownElement.addEventListener('show.bs.dropdown', function() {
+                hideNotificationBadge();
+            });
+        }
+    }
 }
 
 function loadNotifications() {
@@ -125,7 +141,12 @@ function updateNotificationUI(notifications) {
     }
 }
 
-
+function hideNotificationBadge() {
+    const notificationCount = document.getElementById('notificationCount');
+    if (notificationCount) {
+        notificationCount.style.display = 'none';
+    }
+}
 
 function createNotificationItem(notification) {
     const li = document.createElement('li');
