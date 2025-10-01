@@ -1,35 +1,48 @@
 {% extends 'base.html' %}
 
-{% block title %}Hall Ticket - Yenepoya Portal{% endblock %}
+{% block title %}Hall Ticket Request - Yenepoya Portal{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
+    <div class="row mb-4">
         <div class="col">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center">
                 <h2><i class="fas fa-ticket-alt"></i> Hall Ticket Requests</h2>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestHallTicketModal">
-                    <i class="fas fa-plus"></i> Request Hall Ticket
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestModal">
+                    <i class="fas fa-plus"></i> New Request
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- Instructions Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Instructions:</strong> Submit a hall ticket request for your upcoming exam. 
+                Requests will be reviewed and processed by faculty. You can download your hall ticket once approved.
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests List -->
     <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-list"></i> Your Hall Ticket Requests</h5>
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Your Requests</h5>
                 </div>
                 <div class="card-body">
                     {% if requests %}
                     <div class="table-responsive">
                         <table class="table table-hover">
-                            <thead>
+                            <thead class="table-light">
                                 <tr>
                                     <th>Exam Name</th>
                                     <th>Exam Date</th>
-                                    <th>Request Date</th>
+                                    <th>Exam Type</th>
+                                    <th>Requested On</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -37,30 +50,36 @@
                             <tbody>
                                 {% for request in requests %}
                                 <tr>
-                                    <td>{{ request.exam_name }}</td>
+                                    <td><strong>{{ request.exam_name }}</strong></td>
                                     <td>{{ request.exam_date|date:"M d, Y" }}</td>
+                                    <td><span class="badge bg-info">{{ request.get_exam_type_display }}</span></td>
                                     <td>{{ request.requested_at|date:"M d, Y" }}</td>
                                     <td>
                                         {% if request.status == 'pending' %}
-                                            <span class="badge bg-warning">Pending</span>
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-clock"></i> Pending
+                                        </span>
                                         {% elif request.status == 'approved' %}
-                                            <span class="badge bg-success">Approved</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">Rejected</span>
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle"></i> Approved
+                                        </span>
+                                        {% elif request.status == 'rejected' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times-circle"></i> Rejected
+                                        </span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         {% if request.status == 'approved' %}
-                                            <a href="#" class="btn btn-sm btn-primary" onclick="printHallTicket({{ request.id }})">
-                                                <i class="fas fa-print"></i> Print
-                                            </a>
-                                            <a href="#" class="btn btn-sm btn-outline-primary" onclick="downloadHallTicket({{ request.id }})">
-                                                <i class="fas fa-download"></i> Download
-                                            </a>
+                                        <button class="btn btn-sm btn-success" onclick="downloadHallTicket({{ request.id }})">
+                                            <i class="fas fa-download"></i> Download
+                                        </button>
                                         {% elif request.status == 'pending' %}
-                                            <button class="btn btn-sm btn-outline-danger" onclick="cancelRequest({{ request.id }})">
-                                                <i class="fas fa-times"></i> Cancel
-                                            </button>
+                                        <span class="text-muted">Awaiting Approval</span>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-outline-info" onclick="viewRemarks({{ request.id }}, '{{ request.remarks|escapejs }}')">
+                                            <i class="fas fa-eye"></i> View Remarks
+                                        </button>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -71,93 +90,69 @@
                     {% else %}
                     <div class="text-center py-5">
                         <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
-                        <h4 class="text-muted">No hall ticket requests yet</h4>
-                        <p class="text-muted">Request your hall ticket for upcoming exams.</p>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestHallTicketModal">
-                            <i class="fas fa-plus"></i> Request Hall Ticket
+                        <h4 class="text-muted">No Requests Yet</h4>
+                        <p class="text-muted">You haven't submitted any hall ticket requests.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestModal">
+                            <i class="fas fa-plus"></i> Submit Your First Request
                         </button>
                     </div>
                     {% endif %}
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-info-circle"></i> Important Information</h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        <h6><i class="fas fa-exclamation-triangle"></i> Requirements</h6>
-                        <ul class="mb-0">
-                            <li>Minimum 75% attendance required</li>
-                            <li>All fees must be paid</li>
-                            <li>No pending disciplinary actions</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="alert alert-warning">
-                        <h6><i class="fas fa-clock"></i> Processing Time</h6>
-                        <p class="mb-0">Hall ticket requests are processed within 3-5 working days. Request at least 1 week before the exam.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5><i class="fas fa-calendar-alt"></i> Upcoming Exams</h5>
-                </div>
-                <div class="card-body">
-                    <div class="exam-item mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Mid-Term Exam</span>
-                            <small class="text-muted">Dec 15, 2024</small>
-                        </div>
-                        <small class="text-info">All Subjects</small>
-                    </div>
-                    <div class="exam-item mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Final Exam</span>
-                            <small class="text-muted">Jan 20, 2025</small>
-                        </div>
-                        <small class="text-info">All Subjects</small>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
-<!-- Request Hall Ticket Modal -->
-<div class="modal fade" id="requestHallTicketModal" tabindex="-1">
-    <div class="modal-dialog">
+<!-- Request Modal -->
+<div class="modal fade" id="requestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Request Hall Ticket</h5>
+                <h5 class="modal-title"><i class="fas fa-ticket-alt"></i> Request Hall Ticket</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post">
                 {% csrf_token %}
                 <div class="modal-body">
-                    {% if form %}
-                        <div class="mb-3">
-                            <label class="form-label">Exam Name</label>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Exam Name <span class="text-danger">*</span></label>
                             {{ form.exam_name }}
+                            {% if form.exam_name.errors %}
+                            <div class="text-danger small">{{ form.exam_name.errors }}</div>
+                            {% endif %}
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Exam Date</label>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Exam Date <span class="text-danger">*</span></label>
                             {{ form.exam_date }}
+                            {% if form.exam_date.errors %}
+                            <div class="text-danger small">{{ form.exam_date.errors }}</div>
+                            {% endif %}
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Reason (Optional)</label>
-                            {{ form.reason }}
-                            <div class="form-text">Mention any special requirements or reasons</div>
-                        </div>
-                    {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Exam Type <span class="text-danger">*</span></label>
+                        {{ form.exam_type }}
+                        {% if form.exam_type.errors %}
+                        <div class="text-danger small">{{ form.exam_type.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Reason / Additional Information</label>
+                        {{ form.reason }}
+                        {% if form.reason.errors %}
+                        <div class="text-danger small">{{ form.reason.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Optional: Provide any additional details about your request</div>
+                    </div>
                     
                     <div class="alert alert-warning">
-                        <small><i class="fas fa-info-circle"></i> Please ensure you meet all the requirements before requesting a hall ticket.</small>
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Note:</strong> Make sure all information is correct before submitting. 
+                        Your request will be reviewed by faculty.
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -171,70 +166,68 @@
     </div>
 </div>
 
+<!-- Remarks Modal -->
+<div class="modal fade" id="remarksModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-comment"></i> Remarks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="remarksContent"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
-.card {
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    border: none;
-}
-
-.table th {
-    background-color: #f8f9fa;
+.table thead th {
     font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
 }
 
-.exam-item {
-    padding: 10px;
+.table tbody tr:hover {
     background-color: #f8f9fa;
-    border-radius: 5px;
-    border-left: 3px solid #007bff;
 }
 
-.alert {
-    border: none;
-    border-radius: 10px;
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
 }
 
-.alert-info {
-    background-color: rgba(23, 162, 184, 0.1);
-    color: #0c5460;
-    border-left: 4px solid #17a2b8;
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
 }
 
-.alert-warning {
-    background-color: rgba(255, 193, 7, 0.1);
-    color: #856404;
-    border-left: 4px solid #ffc107;
+.badge {
+    padding: 0.5em 0.75em;
+    font-size: 0.875rem;
 }
 </style>
 
 <script>
-function printHallTicket(requestId) {
-    // Open hall ticket in new window for printing
-    window.open(`/hall-ticket/print/${requestId}/`, '_blank');
-}
-
 function downloadHallTicket(requestId) {
-    // Download hall ticket as PDF
-    window.location.href = `/hall-ticket/download/${requestId}/`;
+    // This will be implemented when you add the PDF generation
+    window.location.href = `/download-hall-ticket/${requestId}/`;
 }
 
-function cancelRequest(requestId) {
-    if (confirm('Are you sure you want to cancel this request?')) {
-        fetch(`/hall-ticket/cancel/${requestId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Error cancelling request');
-            }
-        });
-    }
+function viewRemarks(requestId, remarks) {
+    const modal = new bootstrap.Modal(document.getElementById('remarksModal'));
+    document.getElementById('remarksContent').textContent = remarks || 'No remarks provided.';
+    modal.show();
 }
+
+// Auto-close modal on successful submission
+{% if messages %}
+    const modal = bootstrap.Modal.getInstance(document.getElementById('requestModal'));
+    if (modal) {
+        modal.hide();
+    }
+{% endif %}
 </script>
 {% endblock %}

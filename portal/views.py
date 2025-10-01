@@ -9,8 +9,15 @@ from django.core.paginator import Paginator
 from django.contrib.auth.views import PasswordChangeView
 from django.urls import reverse_lazy
 from datetime import datetime, date, timedelta
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import os
 import json
-
 from .models import *
 from .forms import *
 
@@ -529,6 +536,8 @@ def hall_ticket(request):
             hall_ticket.save()
             messages.success(request, 'Hall ticket request submitted successfully!')
             return redirect('hall_ticket')
+        else:
+            print(f"Form errors: {form.errors}")
     else:
         form = HallTicketRequestForm()
     
@@ -540,6 +549,321 @@ def hall_ticket(request):
     }
     
     return render(request, 'hall_ticket.html', context)
+
+
+@login_required
+def manage_hall_tickets(request):
+    """Teacher view to manage hall ticket requests"""
+    if not hasattr(request.user, 'teacher'):
+        messages.error(request, 'Access denied. Only teachers can access this page.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        request_id = request.POST.get('request_id')
+        action = request.POST.get('action')
+        remarks = request.POST.get('remarks', '')
+        
+        ticket_request = get_object_or_404(HallTicketRequest, id=request_id)
+        ticket_request.status = action
+        ticket_request.remarks = remarks
+        ticket_request.processed_by = request.user.teacher
+        ticket_request.processed_at = timezone.now()
+        ticket_request.save()
+        
+        messages.success(request, f'Hall ticket request {action} successfully!')
+        return redirect('manage_hall_tickets')
+    
+    # Get all requests
+    all_requests = HallTicketRequest.objects.all().select_related('student__user').order_by('-requested_at')
+    
+    # Calculate counts
+    pending_count = all_requests.filter(status='pending').count()
+    approved_count = all_requests.filter(status='approved').count()
+    rejected_count = all_requests.filter(status='rejected').count()
+    
+    context = {
+        'is_teacher': True,
+        'requests': all_requests,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'rejected_count': rejected_count,
+    }
+    
+    return render(request, 'manage_hall_tickets.html', context)
+
+@login_required
+def download_hall_ticket(request, request_id):
+    """Generate and download hall ticket PDF for approved requests"""
+    if not hasattr(request.user, 'student'):
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard')
+    
+    # Get the hall ticket request
+    ticket_request = get_object_or_404(
+        HallTicketRequest,
+        id=request_id,
+        student=request.user.student,
+        status='approved'
+    )
+    
+    student = ticket_request.student
+    
+    # Create the HttpResponse object with PDF headers
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="hall_ticket_{student.campus_id}.pdf"'
+    
+    # Create the PDF object
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+    
+    # Set up the page
+    y_position = height - 50
+    
+    # Header - University Name
+    p.setFont("Helvetica-Bold", 16)
+    p.drawCentredString(width/2, y_position, "YENEPOYA")
+    y_position -= 20
+    
+    p.setFont("Helvetica", 12)
+    p.drawCentredString(width/2, y_position, "(Deemed to be University)")
+    y_position -= 15
+    
+    p.setFont("Helvetica", 10)
+    p.drawCentredString(width/2, y_position, "University Road, Deralakatte, Mangalore - 575018")
+    y_position -= 30
+    
+    # Institution Name
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(50, y_position, "Name of the institution: Yenepoya Institute of Arts Science Commerce & Management Campus B")
+    y_position -= 30
+    
+    # Exam Title
+    exam_title = f"{student.semester} Semester BCA - Examination - {ticket_request.exam_date.strftime('%B %Y')}"
+    p.setFont("Helvetica-Bold", 12)
+    p.drawCentredString(width/2, y_position, exam_title)
+    y_position -= 40
+    
+    # Student Details Section
+    p.setFont("Helvetica-Bold", 11)
+    left_margin = 50
+    
+    # Registration Number
+    p.drawString(left_margin, y_position, f"Reg No: {student.registration_number}")
+    y_position -= 20
+    
+    # Name
+    p.drawString(left_margin, y_position, f"Name: {student.user.get_full_name()}")
+    y_position -= 20
+    
+    # Gender
+    gender_display = student.get_gender_display() if student.gender else "Not Specified"
+    p.drawString(left_margin, y_position, f"Gender: {gender_display}")
+    y_position -= 20
+    
+    # Campus ID
+    p.drawString(left_margin, y_position, f"Campus ID: {student.campus_id}")
+    y_position -= 40
+    
+    # Subjects Table
+    # Get subjects for the student's semester
+    subjects = Subject.objects.filter(semester=student.semester).order_by('code')
+    
+    # Create table data
+    table_data = [
+        ['Paper Code', 'Subject/Paper Name', 'Invigilator Sign']
+    ]
+    
+    for subject in subjects:
+        table_data.append([
+            subject.code,
+            f"{subject.name} - [Theory]",
+            '.'
+        ])
+    
+    # Create the table
+    table = Table(table_data, colWidths=[1.5*inch, 4*inch, 1.5*inch])
+    table.setStyle(TableStyle([
+        # Header styling
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        
+        # Body styling
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    
+    # Draw the table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, left_margin, y_position - len(table_data) * 25)
+    
+    # Move y_position down past the table
+    y_position -= (len(table_data) * 25 + 60)
+    
+    # Footer Section
+    p.setFont("Helvetica", 10)
+    
+    # Signature line for candidate
+    p.drawString(left_margin, y_position, "Signature of the Candidate:")
+    p.line(left_margin + 160, y_position, left_margin + 300, y_position)
+    
+    # Controller of Examination
+    p.drawString(width - 250, y_position, "Controller of Examination,")
+    y_position -= 15
+    p.drawString(width - 250, y_position, "Yenepoya (Deemed to be University)")
+    
+    # Add a note at the bottom
+    y_position = 50
+    p.setFont("Helvetica-Oblique", 8)
+    p.drawCentredString(width/2, y_position, 
+                        f"Generated on: {timezone.now().strftime('%d-%m-%Y %I:%M %p')}")
+    
+    # Finalize the PDF
+    p.showPage()
+    p.save()
+    
+    return response
+
+
+@login_required
+def generate_hall_ticket_bulk(request, request_id):
+    """Teacher view to generate hall ticket PDF for a student"""
+    if not hasattr(request.user, 'teacher'):
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard')
+    
+    # Get the hall ticket request
+    ticket_request = get_object_or_404(
+        HallTicketRequest,
+        id=request_id,
+        status='approved'
+    )
+    
+    student = ticket_request.student
+    
+    # Create the HttpResponse object with PDF headers
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="hall_ticket_{student.campus_id}.pdf"'
+    
+    # Create the PDF object
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+    
+    # Set up the page
+    y_position = height - 50
+    
+    # Header - University Name
+    p.setFont("Helvetica-Bold", 16)
+    p.drawCentredString(width/2, y_position, "YENEPOYA")
+    y_position -= 20
+    
+    p.setFont("Helvetica", 12)
+    p.drawCentredString(width/2, y_position, "(Deemed to be University)")
+    y_position -= 15
+    
+    p.setFont("Helvetica", 10)
+    p.drawCentredString(width/2, y_position, "University Road, Deralakatte, Mangalore - 575018")
+    y_position -= 30
+    
+    # Institution Name
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(50, y_position, "Name of the institution: Yenepoya Institute of Arts Science Commerce & Management Campus B")
+    y_position -= 30
+    
+    # Exam Title
+    exam_title = f"{student.semester} Semester BCA - Examination - {ticket_request.exam_date.strftime('%B %Y')}"
+    p.setFont("Helvetica-Bold", 12)
+    p.drawCentredString(width/2, y_position, exam_title)
+    y_position -= 40
+    
+    # Student Details Section
+    p.setFont("Helvetica-Bold", 11)
+    left_margin = 50
+    
+    # Registration Number
+    p.drawString(left_margin, y_position, f"Reg No: {student.registration_number}")
+    y_position -= 20
+    
+    # Name
+    p.drawString(left_margin, y_position, f"Name: {student.user.get_full_name()}")
+    y_position -= 20
+    
+    # Gender
+    gender_display = student.get_gender_display() if student.gender else "Not Specified"
+    p.drawString(left_margin, y_position, f"Gender: {gender_display}")
+    y_position -= 20
+    
+    # Campus ID
+    p.drawString(left_margin, y_position, f"Campus ID: {student.campus_id}")
+    y_position -= 40
+    
+    # Subjects Table
+    subjects = Subject.objects.filter(semester=student.semester).order_by('code')
+    
+    # Create table data
+    table_data = [
+        ['Paper Code', 'Subject/Paper Name', 'Invigilator Sign']
+    ]
+    
+    for subject in subjects:
+        table_data.append([
+            subject.code,
+            f"{subject.name} - [Theory]",
+            '.'
+        ])
+    
+    # Create the table
+    table = Table(table_data, colWidths=[1.5*inch, 4*inch, 1.5*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    
+    # Draw the table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, left_margin, y_position - len(table_data) * 25)
+    
+    # Move y_position down past the table
+    y_position -= (len(table_data) * 25 + 60)
+    
+    # Footer Section
+    p.setFont("Helvetica", 10)
+    
+    # Signature line for candidate
+    p.drawString(left_margin, y_position, "Signature of the Candidate:")
+    p.line(left_margin + 160, y_position, left_margin + 300, y_position)
+    
+    # Controller of Examination
+    p.drawString(width - 250, y_position, "Controller of Examination,")
+    y_position -= 15
+    p.drawString(width - 250, y_position, "Yenepoya (Deemed to be University)")
+    
+    # Add a note at the bottom
+    y_position = 50
+    p.setFont("Helvetica-Oblique", 8)
+    p.drawCentredString(width/2, y_position, 
+                        f"Generated on: {timezone.now().strftime('%d-%m-%Y %I:%M %p')}")
+    
+    # Finalize the PDF
+    p.showPage()
+    p.save()
+    
+    return response
 
 @login_required
 def exam_results(request):

@@ -78,6 +78,14 @@
                     </a>
                 </li>
                 {% endif %}
+                {% if is_teacher %}
+<li class="nav-item">
+    <a class="nav-link {% if request.resolver_match.url_name == 'manage_hall_tickets' %}active{% endif %}" href="{% url 'manage_hall_tickets' %}">
+        <i class="fas fa-id-card"></i>
+        <span>Manage Hall Tickets</span>
+    </a>
+</li>
+{% endif %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'fees_management' %}active{% endif %}" href="{% url 'fees_management' %}">
                         <i class="fas fa-credit-card"></i>
